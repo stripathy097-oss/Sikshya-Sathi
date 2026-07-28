@@ -1,0 +1,6 @@
+{
+  "name": "Sikshya Sathi",
+  "description": "AI-powered study companion for Odisha Board (BSE Odisha) Class 9 & 10 students.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
