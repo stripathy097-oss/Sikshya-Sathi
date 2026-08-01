@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="or">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ଶିକ୍ଷା ସାଥୀ — Sikshya Sathi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Noto+Sans+Oriya:wght@400;500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F6F1E7; --card:#FFFDF9; --ink:#241E17; --ink-soft:#6B6153;
+    --navy:#1B2A4A; --navy-soft:#2C3F63; --ochre:#C9852E; --ochre-soft:#E8C08A;
+    --maroon:#8B3A2F; --teal:#2F6F5E; --line:#E4DACB; --radius:16px;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:'Work Sans','Noto Sans Oriya',system-ui,sans-serif; -webkit-font-smoothing:antialiased;}
+  h1,h2,h3,.display{ font-family:'Fraunces','Noto Sans Oriya', Georgia, serif; }
+  .od{ font-family:'Noto Sans Oriya','Work Sans',sans-serif; }
+  #app{ max-width:520px; margin:0 auto; min-height:100vh; background:var(--bg); position:relative; padding-bottom:40px;}
+
+  .topbar{ background:linear-gradient(160deg, var(--navy) 0%, var(--navy-soft) 100%); color:#F6F1E7; padding:18px 20px 20px; }
+  .topbar .brand{ display:flex; align-items:center; gap:12px; }
+  .brand-name{ font-size:21px; font-weight:600; }
+  .brand-sub{ font-size:11.5px; opacity:0.75; margin-top:2px; }
+  .back-row{ display:flex; align-items:center; gap:10px; margin-bottom:10px; cursor:pointer; width:fit-content;}
+  .back-row span{ font-size:13px; opacity:0.85; }
+  .konark-wheel{ width:54px; height:54px; flex-shrink:0; }
+  .stat-pills{ margin-left:auto; display:flex; flex-direction:column; gap:5px; align-items:flex-end; }
+  .stat-pill{ display:flex; align-items:center; gap:5px; background:rgba(255,255,255,0.12); padding:4px 10px; border-radius:20px; font-size:12px; }
+  .stat-pill span{ font-size:12px; }
+  .stat-pill b{ font-weight:700; }
+  .xp-toast{ position:fixed; top:70px; left:50%; transform:translateX(-50%); background:var(--ochre); color:#241E17; font-weight:700; font-size:13px; padding:8px 18px; border-radius:30px; z-index:99; opacity:0; transition:.3s; pointer-events:none; box-shadow:0 4px 14px rgba(0,0,0,0.2);}
+  .xp-toast.show{ opacity:1; transform:translateX(-50%) translateY(6px); }
+
+  .path-wrap{ position:relative; padding:6px 0 6px 0; }
+  .path-line{ position:absolute; left:50%; top:24px; bottom:24px; width:3px; background:var(--line); transform:translateX(-50%); z-index:0; }
+  .path-node-row{ position:relative; z-index:1; display:flex; justify-content:center; margin-bottom:26px; }
+  .path-node-row.left .path-card{ margin-right:auto; }
+  .path-node-row.right .path-card{ margin-left:auto; }
+  .path-node{ width:52px; height:52px; border-radius:50%; background:var(--card); border:3px solid var(--line); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:15px; color:var(--ink-soft); cursor:pointer; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.06); transition:.15s; }
+  .path-node.done{ background:var(--teal); border-color:var(--teal); color:#fff; }
+  .path-node:active{ transform:scale(0.94); }
+  .path-node-row{ display:flex; align-items:center; gap:14px; }
+  .path-card{ flex:1; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:11px 14px; cursor:pointer; font-size:13.5px; font-weight:500; line-height:1.35; max-width:75%; }
+  .path-card .tag{ display:block; font-size:10px; color:var(--ochre); font-weight:700; margin-top:4px; text-transform:uppercase; letter-spacing:0.5px; }
+  .mode-switch{ display:flex; gap:8px; margin-top:14px; }
+  .mode-btn{ flex:1; text-align:center; padding:9px 6px; border-radius:10px; font-size:12.5px; cursor:pointer; border:1px solid rgba(255,255,255,0.25); color:#F6F1E7cc; }
+  .mode-btn.active{ background:var(--ochre); border-color:var(--ochre); color:#241E17; font-weight:600; }
+
+  .screen{ display:none; padding:20px; }
+  .screen.active{ display:block; animation:fadein .25s ease; }
+  @keyframes fadein{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  .section-label{ font-size:11px; text-transform:uppercase; letter-spacing:1.2px; color:var(--maroon); font-weight:600; margin:20px 0 10px; }
+  .section-label:first-child{ margin-top:0; }
+
+  .class-toggle{ display:flex; gap:10px; }
+  .class-btn{ flex:1; padding:12px 10px; border-radius:12px; border:1.5px solid var(--line); background:var(--card); text-align:center; cursor:pointer;}
+  .class-btn.active{ border-color:var(--navy); background:var(--navy); color:#F6F1E7; }
+  .class-btn .cnum{ font-family:'Fraunces',serif; font-size:20px; font-weight:600; }
+  .class-btn .clabel{ font-size:10.5px; opacity:0.75; }
+
+  .subject-grid{ display:grid; grid-template-columns:1fr; gap:12px; }
+  .subject-card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px; display:flex; align-items:center; gap:14px; cursor:pointer; position:relative;}
+  .subject-icon{ width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:19px; color:#fff; flex-shrink:0;}
+  .subject-info h3{ margin:0 0 2px; font-size:16px; }
+  .subject-info p{ margin:0; font-size:12px; color:var(--ink-soft); }
+  .subject-arrow{ margin-left:auto; color:var(--ink-soft); }
+  .subject-progress-track{ position:absolute; left:16px; right:16px; bottom:7px; height:3px; background:var(--line); border-radius:3px; overflow:hidden;}
+  .subject-progress-fill{ height:100%; background:var(--ochre); }
+
+  .chapter-item{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:13px 15px; margin-bottom:9px; display:flex; align-items:center; gap:11px; cursor:pointer;}
+  .chapter-num{ width:28px; height:28px; border-radius:50%; background:var(--bg); border:1.5px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:600; color:var(--ink-soft); flex-shrink:0;}
+  .chapter-item.done .chapter-num{ background:var(--teal); border-color:var(--teal); color:#fff;}
+  .chapter-title{ font-size:14px; font-weight:500; line-height:1.35; flex:1;}
+  .hub-card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px; display:flex; align-items:center; gap:14px; cursor:pointer; margin-bottom:12px; }
+  .hub-icon{ width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:19px; color:#fff; flex-shrink:0;}
+  .hub-info h3{ margin:0 0 2px; font-size:15.5px; }
+  .hub-info p{ margin:0; font-size:12px; color:var(--ink-soft); }
+  .hub-arrow{ margin-left:auto; color:var(--ink-soft); font-size:18px; }
+  .chapter-tag{ font-size:10px; padding:3px 8px; border-radius:20px; background:var(--ochre-soft); color:#5a3a10; flex-shrink:0;}
+  .chapter-tag.soon{ background:var(--line); color:var(--ink-soft);}
+  .chapter-edit-btn{ font-size:11px; padding:5px 9px; border-radius:8px; background:var(--navy); color:#fff; border:none; cursor:pointer; flex-shrink:0;}
+
+  .chapter-detail h2{ font-size:20px; margin:2px 0 4px; line-height:1.35; }
+  .chapter-detail .meta{ font-size:11.5px; color:var(--ink-soft); margin-bottom:14px;}
+  .note-card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:17px; margin-bottom:14px;}
+  .note-card h4{ margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:0.7px; color:var(--navy);}
+  .note-card p{ font-size:14.5px; line-height:1.85; margin:0 0 10px; color:var(--ink); white-space:pre-line;}
+  .note-card ul{ margin:0; padding-left:18px;}
+  .note-card li{ font-size:13.5px; line-height:1.75; margin-bottom:7px;}
+
+  .quiz-q{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:15px; margin-bottom:11px;}
+  .quiz-q p.qtext{ font-weight:600; font-size:13.5px; margin:0 0 11px; line-height:1.5;}
+  .opt{ display:block; width:100%; text-align:left; padding:10px 13px; margin-bottom:7px; border-radius:10px; border:1.5px solid var(--line); background:var(--bg); font-size:13px; cursor:pointer; font-family:inherit; color:var(--ink);}
+  .opt.correct{ border-color:var(--teal); background:#E4F2EE; color:var(--teal); font-weight:600;}
+  .opt.wrong{ border-color:var(--maroon); background:#F6E7E4; color:var(--maroon); font-weight:600;}
+
+  .placeholder-note{ background:#FBF6EC; border:1px dashed var(--ochre-soft); border-radius:14px; padding:15px; font-size:13px; color:var(--ink-soft); line-height:1.6;}
+
+  /* Rich teacher-style notes */
+  .kw{ background:#E4F2EE; color:var(--teal); padding:1px 7px; border-radius:6px; font-weight:700; }
+  .dt{ background:#FDECC8; color:#8a5a10; padding:1px 7px; border-radius:6px; font-weight:700; white-space:nowrap; }
+  .profile-box{ background:linear-gradient(135deg,#FBF6EC,#F6F1E7); border:1.5px solid var(--ochre-soft); border-radius:14px; padding:14px 16px; margin-bottom:16px; }
+  .diagram-card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px; margin-bottom:16px; text-align:center; }
+  .diagram-card svg{ width:100%; max-width:280px; height:auto; margin:0 auto; display:block; }
+  .diagram-caption{ font-size:11.5px; color:var(--ink-soft); margin-top:8px; line-height:1.5; }
+  .profile-box .pb-head{ font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--maroon); font-weight:700; margin-bottom:6px; }
+  .profile-row{ display:flex; justify-content:space-between; gap:10px; font-size:12.5px; padding:6px 0; border-bottom:1px dashed var(--line); }
+  .profile-row:last-child{ border-bottom:none; }
+  .profile-row .k{ color:var(--ink-soft); flex-shrink:0; }
+  .profile-row .v{ font-weight:600; text-align:right; }
+  .note-section{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:14px; }
+  .note-section-head{ display:flex; align-items:center; gap:9px; margin-bottom:10px; }
+  .note-section-head .ico{ width:28px; height:28px; border-radius:9px; background:var(--navy); color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; }
+  .note-section-head h5{ margin:0; font-size:14px; color:var(--navy); font-family:'Fraunces',serif; font-weight:600; }
+  .note-bullets{ margin:0; padding:0; list-style:none; }
+  .note-bullets li{ font-size:13.5px; line-height:1.8; margin-bottom:9px; padding-left:15px; position:relative; }
+  .note-bullets li::before{ content:''; position:absolute; left:0; top:8px; width:6px; height:6px; border-radius:50%; background:var(--ochre); }
+  .term-box{ background:#F6F1E7; border-left:4px solid var(--maroon); border-radius:8px; padding:10px 13px; margin-bottom:10px; }
+  .term-box:last-child{ margin-bottom:0; }
+  .term-box b{ color:var(--maroon); display:block; margin-bottom:3px; font-size:12.5px; }
+  .term-box span{ font-size:12.5px; line-height:1.6; color:var(--ink); }
+  .timeline-wrap{ position:relative; padding-left:18px; }
+  .timeline-line{ position:absolute; left:4px; top:4px; bottom:4px; width:2px; background:var(--line); }
+  .timeline-item{ position:relative; margin-bottom:13px; }
+  .timeline-item::before{ content:''; position:absolute; left:-18px; top:3px; width:10px; height:10px; border-radius:50%; background:var(--ochre); border:2px solid var(--card); box-shadow:0 0 0 1.5px var(--ochre); }
+  .timeline-item .yr{ font-weight:700; color:var(--maroon); font-size:12.5px; margin-right:6px; }
+  .timeline-item .ev{ font-size:12.5px; color:var(--ink); line-height:1.6; }
+
+  .cta-btn{ display:block; width:100%; padding:13px; border-radius:12px; border:none; background:var(--navy); color:#F6F1E7; font-weight:600; font-size:13.5px; cursor:pointer; margin-top:6px; font-family:inherit;}
+  .cta-btn.ghost{ background:transparent; border:1.5px solid var(--navy); color:var(--navy);}
+  .cta-btn.danger{ background:var(--maroon); }
+  .btn-row{ display:flex; gap:8px; }
+  .btn-row .cta-btn{ margin-top:0; }
+
+  .disclaimer{ margin-top:22px; padding:13px 15px; background:#EFE8DB; border-radius:12px; font-size:11px; color:var(--ink-soft); line-height:1.6;}
+
+  /* Editor form */
+  label{ display:block; font-size:11.5px; font-weight:600; color:var(--navy); margin:14px 0 6px; text-transform:uppercase; letter-spacing:0.5px;}
+  label:first-of-type{ margin-top:0; }
+  input[type=text], textarea, select{
+    width:100%; padding:11px 12px; border-radius:10px; border:1.5px solid var(--line); background:var(--card);
+    font-family:'Noto Sans Oriya','Work Sans',sans-serif; font-size:14px; color:var(--ink); resize:vertical;
+  }
+  #chapterSearchBox{ font-size:13.5px; }
+  textarea{ min-height:90px; line-height:1.6; }
+  .hint{ font-size:11px; color:var(--ink-soft); margin-top:4px; }
+  .qbuilder{ border:1.5px dashed var(--line); border-radius:12px; padding:12px; margin-bottom:10px; background:var(--card);}
+  .qbuilder .qhead{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;}
+  .qbuilder .qhead b{ font-size:12px; color:var(--maroon); }
+  .remove-q{ font-size:11px; color:var(--maroon); background:none; border:none; cursor:pointer; text-decoration:underline;}
+  .opt-row{ display:flex; align-items:center; gap:8px; margin-bottom:6px;}
+  .opt-row input[type=text]{ flex:1; }
+  .file-row{ display:flex; gap:8px; margin-bottom:16px; }
+  .file-row label.filebtn{ flex:1; text-align:center; padding:10px; border-radius:10px; border:1.5px solid var(--navy); color:var(--navy); font-size:12.5px; cursor:pointer; margin:0; text-transform:none; letter-spacing:0;}
+  .file-row input[type=file]{ display:none; }
+  .editor-list-item{ display:flex; align-items:center; gap:10px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:11px 13px; margin-bottom:8px;}
+  .editor-list-item .t{ flex:1; font-size:13px; }
+  .toast{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--navy); color:#fff; padding:10px 18px; border-radius:30px; font-size:12.5px; z-index:99; opacity:0; transition:.25s; pointer-events:none;}
+  .toast.show{ opacity:1; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="topbar">
+    <div id="backRow" class="back-row" style="display:none;" onclick="goBack()">
+      <span>&#8592;</span><span>ପଛକୁ</span>
+    </div>
+    <div class="brand">
+      <svg class="konark-wheel" viewBox="0 0 100 100" id="homeWheel">
+        <circle cx="50" cy="50" r="44" fill="none" stroke="#40507A" stroke-width="4"/>
+        <circle id="wheelProgress" cx="50" cy="50" r="44" fill="none" stroke="#C9852E" stroke-width="4" stroke-linecap="round" stroke-dasharray="276.5" stroke-dashoffset="276.5" transform="rotate(-90 50 50)"/>
+        <g stroke="#40507A" stroke-width="2.5">
+          <line x1="50" y1="10" x2="50" y2="90"/><line x1="10" y1="50" x2="90" y2="50"/>
+          <line x1="19" y1="19" x2="81" y2="81"/><line x1="81" y1="19" x2="19" y2="81"/>
+        </g>
+        <circle cx="50" cy="50" r="8" fill="#C9852E"/>
+      </svg>
+      <div>
+        <div class="brand-name od">ଶିକ୍ଷା ସାଥୀ</div>
+        <div class="brand-sub">BSE Odisha · Class 9-10 · Odia Medium</div>
+      </div>
+      <div class="stat-pills">
+        <div class="stat-pill" title="Streak"><span>&#128293;</span><b id="streakCount">0</b></div>
+        <div class="stat-pill" title="XP"><span>&#11088;</span><b id="xpCount">0</b> XP</div>
+      </div>
+    </div>
+    <div class="mode-switch">
+      <div class="mode-btn active" id="modeStudyBtn" onclick="setMode('study')">ପଢ଼ / Study Mode</div>
+      <div class="mode-btn" id="modeEditBtn" onclick="setMode('editor')">Content Editor</div>
+    </div>
+  </div>
+
+  <!-- HOME (STUDY) -->
+  <div class="screen active" id="screen-home">
+    <div class="section-label">Class ବାଛନ୍ତୁ</div>
+    <div class="class-toggle">
+      <div class="class-btn active" id="btn-class-9" onclick="setClass(9)"><div class="cnum">9</div><div class="clabel">Class IX</div></div>
+      <div class="class-btn" id="btn-class-10" onclick="setClass(10)"><div class="cnum">10</div><div class="clabel">Class X (Matric)</div></div>
+    </div>
+    <div class="section-label">ବିଷୟ (Subjects)</div>
+    <div class="subject-grid" id="subjectGrid"></div>
+    <div class="disclaimer">
+      Odia content ଏଠାରେ ଦିଆଯାଇଛି, କିନ୍ତୁ ଏହା AI ଦ୍ୱାରା ଲେଖାଯାଇଛି — ପ୍ରକାଶନ ପୂର୍ବରୁ ଏକଥର teacher/textbook ସହ ମିଳାଇ ନିଅନ୍ତୁ।
+    </div>
+  </div>
+
+  <!-- CHAPTER LIST -->
+  <div class="screen" id="screen-chapters">
+    <h2 class="display od" id="chapterListTitle" style="font-size:18px; margin:0 0 4px;"></h2>
+    <input type="text" id="chapterSearchBox" placeholder="&#128269; Chapter ଖୋଜନ୍ତୁ..." oninput="filterChapterList(this.value)" style="margin-bottom:12px;">
+    <div id="chapterList"></div>
+  </div>
+
+  <!-- CHAPTER HUB -->
+  <div class="screen" id="screen-chapterhub">
+    <div class="meta" id="hubMeta"></div>
+    <h2 class="display od" id="hubTitle" style="margin:2px 0 18px;"></h2>
+    <div class="hub-card" onclick="openNotes()">
+      <div class="hub-icon" style="background:var(--navy);">&#128214;</div>
+      <div class="hub-info"><h3>Notes</h3><p>ବିସ୍ତୃତ ବର୍ଣ୍ଣନା, ଜରୁରୀ ଶବ୍ଦ, diagram</p></div>
+      <div class="hub-arrow">&#8250;</div>
+    </div>
+    <div class="hub-card" onclick="openLongQPage()">
+      <div class="hub-icon" style="background:var(--maroon);">&#9997;&#65039;</div>
+      <div class="hub-info"><h3>Long Question</h3><p>5 ମାର୍କର ସମ୍ଭାବ୍ୟ ପ୍ରଶ୍ନ</p></div>
+      <div class="hub-arrow">&#8250;</div>
+    </div>
+    <div class="hub-card" onclick="openQuizPage()">
+      <div class="hub-icon" style="background:var(--ochre);">&#128221;</div>
+      <div class="hub-info"><h3>Quiz</h3><p id="hubQuizCount">50 ପ୍ରଶ୍ନ</p></div>
+      <div class="hub-arrow">&#8250;</div>
+    </div>
+  </div>
+
+  <!-- NOTES SUB-PAGE -->
+  <div class="screen" id="screen-notes">
+    <div class="meta" id="notesMeta"></div>
+    <h2 class="display od" id="notesTitle" style="margin:2px 0 14px;"></h2>
+    <div id="notesBody"></div>
+  </div>
+
+  <!-- LONG QUESTION SUB-PAGE -->
+  <div class="screen" id="screen-longq-page">
+    <div class="meta" id="longqMeta"></div>
+    <h2 class="display od" style="margin:2px 0 14px;">&#9997;&#65039; Long Question</h2>
+    <div id="longqBody"></div>
+  </div>
+
+  <!-- QUIZ SUB-PAGE -->
+  <div class="screen" id="screen-quiz-page">
+    <div class="meta" id="quizMeta"></div>
+    <h2 class="display od" style="margin:2px 0 14px;">&#128221; Quiz</h2>
+    <div id="quizBody"></div>
+  </div>
+
+  <!-- CONCEPT DETAIL -->
+  <div class="screen" id="screen-concept">
+    <div class="meta" id="conceptMeta">Concept</div>
+    <h2 class="display od" id="conceptTitle" style="margin:2px 0 14px;"></h2>
+    <div id="conceptBody"></div>
+  </div>
+
+  <!-- EDITOR HOME -->
+  <div class="screen" id="screen-editor">
+    <div class="section-label">Save / Load your content file</div>
+    <div class="file-row">
+      <label class="filebtn">Import (upload) JSON<input type="file" id="importFile" accept=".json" onchange="importJSON(event)"></label>
+      <button class="cta-btn ghost" style="flex:1; margin:0;" onclick="exportJSON()">Export (download) JSON</button>
+    </div>
+
+    <div class="section-label">Class / Subject</div>
+    <div class="class-toggle" style="margin-bottom:10px;">
+      <div class="class-btn active" id="ebtn-class-9" onclick="setEditorClass(9)"><div class="cnum">9</div><div class="clabel">Class IX</div></div>
+      <div class="class-btn" id="ebtn-class-10" onclick="setEditorClass(10)"><div class="cnum">10</div><div class="clabel">Class X</div></div>
+    </div>
+    <select id="editorSubjectSelect" onchange="renderEditorList()">
+      <option value="English">English</option>
+      <option value="History">History (ଇତିହାସ)</option>
+      <option value="Geography">Geography (ଭୂଗୋଳ)</option>
+    </select>
+
+    <div class="section-label">ଏହି ବିଷୟର ଅଧ୍ୟାୟ</div>
+    <div id="editorChapterList"></div>
+    <button class="cta-btn" onclick="openChapterForm(null)">+ ନୂଆ ଅଧ୍ୟାୟ ଯୋଡ଼ନ୍ତୁ (Add new chapter)</button>
+  </div>
+
+  <!-- CHAPTER FORM (add/edit) -->
+  <div class="screen" id="screen-form">
+    <h2 class="display" style="font-size:18px; margin:0 0 10px;" id="formHeading">ନୂଆ ଅଧ୍ୟାୟ</h2>
+
+    <label>ଅଧ୍ୟାୟର ନାମ (Chapter title)</label>
+    <input type="text" id="f-title" placeholder="ଉଦାହରଣ: ଗାନ୍ଧିଜୀଙ୍କ ଆବିର୍ଭାବ">
+
+    <label>ବିସ୍ତୃତ ବର୍ଣ୍ଣନା (Detailed content — as many paragraphs as needed)</label>
+    <textarea id="f-summary" style="min-height:160px;" placeholder="ଏଠାରେ ପୁରା ବିସ୍ତୃତ ଭାବରେ ଲେଖନ୍ତୁ..."></textarea>
+    <div class="hint">Naya paragraph ke liye Enter dabaye — line breaks preserve honge.</div>
+
+    <label>ମୁଖ୍ୟ ବିନ୍ଦୁ (Key points — ek line mein ek point)</label>
+    <textarea id="f-points" placeholder="ପ୍ରତ୍ୟେକ ପଂକ୍ତିରେ ଗୋଟିଏ ବିନ୍ଦୁ ଲେଖନ୍ତୁ"></textarea>
+
+    <label>Quiz Questions</label>
+    <div id="quizBuilder"></div>
+    <button class="cta-btn ghost" onclick="addQuizRow()">+ ପ୍ରଶ୍ନ ଯୋଡ଼ନ୍ତୁ (Add question)</button>
+
+    <div class="btn-row" style="margin-top:22px;">
+      <button class="cta-btn" onclick="saveChapter()">ଚାପ୍ଟର Save କରନ୍ତୁ</button>
+      <button class="cta-btn ghost" onclick="setMode('editor')">Cancel</button>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------------- SEED DATA ---------------- */
+let DATA = {
+  9: {
+    English: { icon:"&#9998;", color:"#2F6F5E", chapters:[
+      {id:"e9-d1", title:"(Detailed) The Priceless Gift", status:"soon"},
+      {id:"e9-d2", title:"(Detailed) The Swimmer Who Does Not Need Her Legs!", status:"soon"},
+      {id:"e9-d3", title:"(Detailed) Road Safety Week", status:"soon"},
+      {id:"e9-d4", title:"(Detailed) Missile Man of India", status:"soon"},
+      {id:"e9-d5", title:"(Detailed) A Hero", status:"soon"},
+      {id:"e9-d6", title:"(Detailed) Home and Love", status:"soon"},
+      {id:"e9-d7", title:"(Detailed) Nine Gold Medals", status:"soon"},
+      {id:"e9-d8", title:"(Detailed) The Noble Nature", status:"soon"},
+      {id:"e9-d9", title:"(Detailed) No Men are Foreign", status:"soon"},
+      {id:"e9-d10", title:"(Detailed) Alexander Selkirk", status:"soon"},
+      {id:"e9-d11", title:"(Detailed) Project", status:"soon"},
+      {id:"e9-nd1", title:"(Non-Detailed) The Trunk of Ganesh", status:"soon"},
+      {id:"e9-nd2", title:"(Non-Detailed) The Lost Child", status:"soon"},
+      {id:"e9-nd3", title:"(Non-Detailed) The First Step", status:"soon"},
+      {id:"e9-nd4", title:"(Non-Detailed) The Magic Flute", status:"soon"},
+      {id:"e9-nd5", title:"(Non-Detailed) The Portrait of a Lady", status:"soon"},
+      {id:"e9-g1", title:"(Grammar) Parts of a Sentence", status:"soon"},
+      {id:"e9-g2", title:"(Grammar) Verbs", status:"soon"},
+      {id:"e9-g3", title:"(Grammar) Time and Tense", status:"soon"},
+      {id:"e9-g4", title:"(Grammar) Auxiliaries", status:"soon"},
+      {id:"e9-g5", title:"(Grammar) The Noun Phrase", status:"soon"},
+      {id:"e9-g6", title:"(Grammar) Pre and Post Modifiers in the Noun Phrase", status:"soon"},
+      {id:"e9-g7", title:"(Grammar) Countables and Uncountables", status:"soon"},
+      {id:"e9-g8", title:"(Grammar) Determiners", status:"soon"},
+      {id:"e9-g9", title:"(Grammar) Adjectives", status:"soon"},
+      {id:"e9-g10", title:"(Grammar) Adverbs and Adverbials", status:"soon"},
+      {id:"e9-g11", title:"(Grammar) Negatives and Interrogatives", status:"soon"},
+      {id:"e9-g12", title:"(Grammar) The Predicate Phrase", status:"soon"}
+    ] },
+    History: { icon:"&#127963;", color:"#8B3A2F", chapters:[
+      {id:"h9-1", title:"ଏସିଆ ଓ ଆଫ୍ରିକା ମହାଦେଶରେ ଉପନିବେଶବାଦ", status:"soon"},
+      {id:"h9-2", title:"ପ୍ରଥମ ବିଶ୍ୱଯୁଦ୍ଧ : କାରଣ ଓ ଫଳାଫଳ", status:"soon"},
+      {id:"h9-3", title:"ରୁଷ ବିପ୍ଲବ : କାରଣ ଓ ଫଳାଫଳ", status:"soon"},
+      {id:"h9-4", title:"ଶାନ୍ତି ପାଇଁ ପ୍ରାରମ୍ଭିକ ଉଦ୍ୟମ : ଜାତିସଂଘ", status:"soon"},
+      {id:"h9-5", title:"ଫାସୀବାଦ ଓ ନାଜିବାଦର ବିକାଶ", status:"soon"},
+      {id:"h9-6", title:"ଦ୍ଵିତୀୟ ବିଶ୍ଵଯୁଦ୍ଧ : କାରଣ ଓ ଫଳାଫଳ", status:"soon"},
+      {id:"h9-7", title:"ବିଂଶ ଶତାବ୍ଦୀରେ ଏସିଆ ଓ ଆଫ୍ରିକାରେ ଜାତୀୟତାବାଦୀ ଆନ୍ଦୋଳନ ଏବଂ ସ୍ଵାଧୀନ ରାଷ୍ଟ୍ରସମୂହର ଅଭ୍ୟୁଦୟ", status:"soon"},
+      {id:"h9-8", title:"ଶୀତଳ ଯୁଦ୍ଧ : କାରଣ ଓ ଫଳାଫଳ", status:"soon"},
+      {id:"h9-9", title:"ସାମରିକ ଗୋଷ୍ଠୀ ଗଠନ : ସଶସ୍ତ୍ରୀକରଣ ପାଇଁ ପ୍ରତିଦ୍ବନ୍ଦିତା", status:"soon"},
+      {id:"h9-10", title:"ଗୋଷ୍ଠୀ ନିରପେକ୍ଷ ଆନ୍ଦୋଳନ", status:"soon"},
+      {id:"h9-11", title:"ସୋଭିଏତ୍ ସଂଘର ବିଖଣ୍ଡୀକରଣ", status:"soon"},
+      {id:"h9-12", title:"ଭାରତୀୟ ସଂସ୍କୃତି : ବିଭିନ୍ନତାରେ ଏକତା", status:"soon"},
+      {id:"h9-13", title:"ଭାରତ ଓ ସଂଯୁକ୍ତ ରାଷ୍ଟ୍ରସଂଘ", status:"soon"}
+    ] },
+    Geography: { icon:"&#127760;", color:"#C9852E", chapters:[
+      {
+        id:"g9-1", title:"ଭାରତ — ଆକାର ଓ ଅବସ୍ଥିତି", status:"ready",
+        meta:"Class 9 · ଭୂଗୋଳ · ଅଧ୍ୟାୟ ୧, ପାଠ ୧",
+        diagram:{
+          caption:"ଭାରତର ଅବସ୍ଥିତି — ଉତ୍ତର/ଦକ୍ଷିଣ/ପୂର୍ବ/ପଶ୍ଚିମ ସୀମା, କର୍କଟ କ୍ରାନ୍ତି ରେଖା ଓ ପଡ଼ୋଶୀ ଦେଶ (ମୌଳିକ ସ୍କେଚ୍ — ସଠିକ୍ ମାନଚିତ୍ର ପାଇଁ ପାଠ୍ୟପୁସ୍ତକ ଦେଖନ୍ତୁ)",
+          svg:`<svg viewBox="0 0 300 380" xmlns="http://www.w3.org/2000/svg">
+            <rect x="0" y="0" width="300" height="380" rx="14" fill="#EAF4F2"/>
+            <polygon points="150,18 185,55 205,95 190,130 218,165 198,215 175,270 162,325 150,360 138,325 125,270 102,215 82,165 110,130 95,95 115,55" fill="#E8C08A" stroke="#8B3A2F" stroke-width="2"/>
+            <line x1="15" y1="150" x2="285" y2="150" stroke="#8B3A2F" stroke-width="1.3" stroke-dasharray="5,4"/>
+            <text x="18" y="145" font-size="9.5" fill="#8B3A2F">କର୍କଟ କ୍ରାନ୍ତି ରେଖା (23.5°N)</text>
+            <circle cx="150" cy="20" r="3.5" fill="#1B2A4A"/>
+            <text x="150" y="12" font-size="9.5" text-anchor="middle" fill="#1B2A4A">କାଶ୍ମୀର (ଉତ୍ତର)</text>
+            <circle cx="150" cy="358" r="3.5" fill="#1B2A4A"/>
+            <text x="150" y="374" font-size="9.5" text-anchor="middle" fill="#1B2A4A">କନ୍ୟାକୁମାରୀ (ଦକ୍ଷିଣ)</text>
+            <circle cx="82" cy="165" r="3.5" fill="#1B2A4A"/>
+            <text x="30" y="168" font-size="9.5" fill="#1B2A4A">ଗୁଜରାଟ (ପଶ୍ଚିମ)</text>
+            <circle cx="218" cy="165" r="3.5" fill="#1B2A4A"/>
+            <text x="222" y="163" font-size="9" fill="#1B2A4A">ଅରୁଣାଚଳ</text>
+            <text x="222" y="174" font-size="9" fill="#1B2A4A">(ପୂର୍ବ)</text>
+            <text x="60" y="45" font-size="9.5" fill="#2F6F5E">ପାକିସ୍ତାନ</text>
+            <text x="130" y="30" font-size="9.5" fill="#2F6F5E">ଚୀନ୍ / ନେପାଳ / ଭୁଟାନ</text>
+            <text x="215" y="60" font-size="9.5" fill="#2F6F5E">ମିଆଁମାର</text>
+            <text x="190" y="240" font-size="9.5" fill="#2F6F5E">ବାଂଲାଦେଶ</text>
+            <text x="215" y="330" font-size="9.5" fill="#8B3A2F">ବଙ୍ଗୋପସାଗର</text>
+            <text x="40" y="330" font-size="9.5" fill="#8B3A2F">ଆରବ ସାଗର</text>
+            <text x="120" y="345" font-size="9" fill="#8B3A2F">ଶ୍ରୀଲଙ୍କା</text>
+          </svg>`
+        },
+        sections:[
+          { icon:"&#128207;", title:"ଭାରତର ଆକାର", bullets:[
+            "ଭାରତର ମୋଟ କ୍ଷେତ୍ରଫଳ ପ୍ରାୟ <span class='kw'>32.87 ଲକ୍ଷ ବର୍ଗ କି.ମି.</span> — ଏହା ବିଶ୍ୱର ସାତତମ ବୃହତ୍ତମ ଦେଶ।",
+            "ଆକାର ଦୃଷ୍ଟିରୁ ଛୋଟ ଥିଲେ ମଧ୍ୟ ଜନସଂଖ୍ୟା ଦୃଷ୍ଟିରୁ ଭାରତ ବିଶ୍ୱର ଅଗ୍ରଣୀ ଦେଶ ମଧ୍ୟରୁ ଏକ।",
+            "ଭାରତର ସମୁଦ୍ର ତଟରେଖା ପ୍ରାୟ <span class='kw'>7,516 କି.ମି.</span> ଲମ୍ବା।"
+          ]},
+          { icon:"&#129517;", title:"ଅବସ୍ଥିତି ଓ ବିସ୍ତାର", bullets:[
+            "ଭାରତ ଅକ୍ଷାଂଶରେ <span class='dt'>8°4' ଉ.</span>ରୁ <span class='dt'>37°6' ଉ.</span> ପର୍ଯ୍ୟନ୍ତ ଏବଂ ଦ୍ରାଘିମାରେ <span class='dt'>68°7' ପୂ.</span>ରୁ <span class='dt'>97°25' ପୂ.</span> ପର୍ଯ୍ୟନ୍ତ ବିସ୍ତୃତ।",
+            "<span class='kw'>82.5° ପୂ.</span> ଦ୍ରାଘିମା (ଉତ୍ତର ପ୍ରଦେଶର ମିର୍ଜାପୁର ଦେଇ ଯାଉଥିବା) ଭାରତର <span class='kw'>ମାନକ ଦ୍ରାଘିମା</span> ଭାବେ ଗ୍ରହଣ କରାଯାଇଛି, ଯାହା ଉପରେ ଆଧାର କରି ଭାରତୀୟ ମାନକ ସମୟ (IST) ସ୍ଥିର ହୁଏ।",
+            "<span class='kw'>କର୍କଟ କ୍ରାନ୍ତି ରେଖା</span> (23.5° ଉ.) ଭାରତର ମଝି ଦେଇ ଆଠଟି ରାଜ୍ୟ (ଗୁଜରାଟ, ରାଜସ୍ଥାନ, ମଧ୍ୟପ୍ରଦେଶ, ଛତିଶଗଡ଼, ଝାଡ଼ଖଣ୍ଡ, ପଶ୍ଚିମବଙ୍ଗ, ତ୍ରିପୁରା ଓ ମିଜୋରାମ) ଦେଇ ଗତି କରେ।"
+          ]},
+          { icon:"&#127760;", title:"ପଡ଼ୋଶୀ ଦେଶ", bullets:[
+            "ସ୍ଥଳସୀମା ମାଧ୍ୟମରେ ପଡ଼ୋଶୀ: <span class='kw'>ପାକିସ୍ତାନ, ଚୀନ୍, ନେପାଳ, ଭୁଟାନ, ମିଆଁମାର, ବାଂଲାଦେଶ</span>।",
+            "ସାମୁଦ୍ରିକ ସୀମା ମାଧ୍ୟମରେ ପଡ଼ୋଶୀ: <span class='kw'>ଶ୍ରୀଲଙ୍କା</span> (ପାକ୍ ଜଳସନ୍ଧି ଦେଇ) ଓ <span class='kw'>ମାଲଦ୍ୱୀପ</span>।",
+            "ପଶ୍ଚିମରେ ଆରବ ସାଗର, ପୂର୍ବରେ ବଙ୍ଗୋପସାଗର, ଓ ଦକ୍ଷିଣରେ ଭାରତ ମହାସାଗର ଭାରତକୁ ଘେରି ରହିଛି।"
+          ]},
+          { icon:"&#127970;", title:"ପ୍ରଶାସନିକ ବିଭାଗ", bullets:[
+            "ବର୍ତ୍ତମାନ ଭାରତରେ <span class='kw'>28 ଟି ରାଜ୍ୟ</span> ଓ <span class='kw'>8 ଟି କେନ୍ଦ୍ରଶାସିତ ଅଞ୍ଚଳ</span> ଅଛି।",
+            "ଓଡ଼ିଶା ଭାରତର ପୂର୍ବ ଉପକୂଳରେ ଅବସ୍ଥିତ, ବଙ୍ଗୋପସାଗର ସହ ଏହାର ସୀମା ଲାଗିଛି।"
+          ]}
+        ],
+        terms:[
+          {term:"ମାନକ ଦ୍ରାଘିମା", def:"82.5° ପୂ. ଦ୍ରାଘିମା, ଯାହା ଉପରେ ଆଧାର କରି ସମଗ୍ର ଦେଶର ମାନକ ସମୟ (IST) ସ୍ଥିର ହୁଏ।"},
+          {term:"କର୍କଟ କ୍ରାନ୍ତି ରେଖା", def:"23.5° ଉତ୍ତର ଅକ୍ଷାଂଶ ରେଖା, ଯାହା ଭାରତକୁ ପ୍ରାୟ ଦୁଇ ଭାଗରେ ବିଭକ୍ତ କରେ (ଉତ୍ତର ଉପ-ଉଷ୍ଣ, ଦକ୍ଷିଣ ଉଷ୍ଣ ଅଞ୍ଚଳ)।"},
+          {term:"IST (Indian Standard Time)", def:"ଭାରତର ମାନକ ସମୟ, ଯାହା ମାନକ ଦ୍ରାଘିମା (82.5° ପୂ.) ଉପରେ ଆଧାରିତ।"}
+        ],
+        quiz:[
+          {q:"ଭାରତର ମୋଟ କ୍ଷେତ୍ରଫଳ କେତେ?", opts:["ପ୍ରାୟ 32.87 ଲକ୍ଷ ବର୍ଗ କି.ମି.","ପ୍ରାୟ 10 ଲକ୍ଷ ବର୍ଗ କି.ମି.","ପ୍ରାୟ 50 ଲକ୍ଷ ବର୍ଗ କି.ମି.","ପ୍ରାୟ 20 ଲକ୍ଷ ବର୍ଗ କି.ମି."], correct:0},
+          {q:"କ୍ଷେତ୍ରଫଳ ଦୃଷ୍ଟିରୁ ଭାରତ ବିଶ୍ୱରେ କେତେତମ ସ୍ଥାନରେ?", opts:["ସପ୍ତମ","ପ୍ରଥମ","ତୃତୀୟ","ଦଶମ"], correct:0}
+        ],
+        longQ:{
+          q:"ଭାରତର ଅବସ୍ଥିତି ଓ ବିସ୍ତାର ବର୍ଣ୍ଣନା କର। (5 ମାର୍କ)",
+          answer:"ଭାରତ ଏସିଆ ମହାଦେଶର ଦକ୍ଷିଣ ଭାଗରେ ଅବସ୍ଥିତ ଏବଂ କ୍ଷେତ୍ରଫଳ ଦୃଷ୍ଟିରୁ ବିଶ୍ୱର ସପ୍ତମ ବୃହତ୍ତମ ଦେଶ, ଯାହାର ମୋଟ କ୍ଷେତ୍ରଫଳ ପ୍ରାୟ 32.87 ଲକ୍ଷ ବର୍ଗ କି.ମି.।\n\nଅକ୍ଷାଂଶୀୟ ଦୃଷ୍ଟିରୁ ଭାରତ 8°4' ଉତ୍ତରରୁ 37°6' ଉତ୍ତର ପର୍ଯ୍ୟନ୍ତ ଏବଂ ଦ୍ରାଘିମାରେ 68°7' ପୂର୍ବରୁ 97°25' ପୂର୍ବ ପର୍ଯ୍ୟନ୍ତ ବିସ୍ତୃତ। 82.5° ପୂର୍ବ ଦ୍ରାଘିମା, ଯାହା ଉତ୍ତର ପ୍ରଦେଶର ମିର୍ଜାପୁର ଦେଇ ଯାଏ, ଭାରତର ମାନକ ଦ୍ରାଘିମା ଭାବେ ଗ୍ରହଣ କରାଯାଇଛି, ଏବଂ ଏହା ଉପରେ ଆଧାର କରି ସମଗ୍ର ଦେଶ ପାଇଁ ଏକ ମାନକ ସମୟ (IST) ସ୍ଥିର ହୋଇଛି। କର୍କଟ କ୍ରାନ୍ତି ରେଖା (23.5° ଉ.) ଭାରତର ମଝି ଦେଇ ଆଠଟି ରାଜ୍ୟ ଦେଇ ଗତି କରି ଦେଶକୁ ପ୍ରାୟ ଉପ-ଉଷ୍ଣ ଓ ଉଷ୍ଣ ଅଞ୍ଚଳରେ ବିଭକ୍ତ କରେ।\n\nସ୍ଥଳସୀମା ଦୃଷ୍ଟିରୁ ଭାରତର ପଡ଼ୋଶୀ ଦେଶ ହେଉଛନ୍ତି ପାକିସ୍ତାନ, ଚୀନ୍, ନେପାଳ, ଭୁଟାନ, ମିଆଁମାର ଓ ବାଂଲାଦେଶ, ଆଉ ସାମୁଦ୍ରିକ ସୀମା ଦ୍ୱାରା ଶ୍ରୀଲଙ୍କା ଓ ମାଲଦ୍ୱୀପ ସହ ପଡ଼ୋଶୀ ସମ୍ପର୍କ ଅଛି। ଦେଶର ପଶ୍ଚିମରେ ଆରବ ସାଗର, ପୂର୍ବରେ ବଙ୍ଗୋପସାଗର, ଓ ଦକ୍ଷିଣରେ ଭାରତ ମହାସାଗର ଅବସ୍ଥିତ। ଏହି ବ୍ୟାପକ ବିସ୍ତାର ଓ ସାମରିକ-ବାଣିଜ୍ୟିକ ଦୃଷ୍ଟିରୁ ଗୁରୁତ୍ୱପୂର୍ଣ୍ଣ ଅବସ୍ଥାନ ଭାରତକୁ ଏକ ପ୍ରାକୃତିକ ଓ ସାଂସ୍କୃତିକ ବିବିଧତା ପୂର୍ଣ୍ଣ ଦେଶ ଭାବେ ଗଢ଼ି ତୋଳିଛି।"
+        }
+      },
+      {
+        id:"g9-2", title:"ଭାରତ — ପ୍ରାକୃତିକ ବିଭାଗ", status:"ready",
+        meta:"Class 9 · ଭୂଗୋଳ · ଅଧ୍ୟାୟ ୧, ପାଠ ୨",
+        diagram:{
+          caption:"ଭାରତର ପ୍ରାକୃତିକ ବିଭାଗ — ଉତ୍ତରରୁ ଦକ୍ଷିଣକୁ ଏକ ସରଳ cross-section (ମୌଳିକ ସ୍କେଚ୍)",
+          svg:`<svg viewBox="0 0 300 220" xmlns="http://www.w3.org/2000/svg">
+            <rect x="0" y="0" width="300" height="220" rx="12" fill="#EAF4F2"/>
+            <polygon points="10,140 45,55 75,95 100,140" fill="#C9852E"/>
+            <text x="45" y="48" font-size="9" text-anchor="middle" fill="#1B2A4A">ହିମାଳୟ</text>
+            <rect x="100" y="130" width="55" height="30" fill="#D9C79A"/>
+            <text x="127" y="125" font-size="8.5" text-anchor="middle" fill="#1B2A4A">ଉତ୍ତର ସମତଳ</text>
+            <polygon points="155,160 185,110 235,110 245,160" fill="#B99A6B"/>
+            <text x="200" y="105" font-size="8.5" text-anchor="middle" fill="#1B2A4A">ପେନିନ୍ସୁଲାର ମାଳଭୂମି</text>
+            <rect x="245" y="150" width="25" height="10" fill="#D9C79A"/>
+            <text x="257" y="145" font-size="7.5" text-anchor="middle" fill="#1B2A4A">ଉପକୂଳ</text>
+            <rect x="0" y="160" width="300" height="60" fill="#8FCBC4"/>
+            <text x="150" y="195" font-size="9.5" text-anchor="middle" fill="#12403c">ସାଗର</text>
+            <line x1="0" y1="160" x2="300" y2="160" stroke="#2F6F5E" stroke-width="1"/>
+          </svg>`
+        },
+        sections:[
+          { icon:"&#9968;&#65039;", title:"ହିମାଳୟ ପର୍ବତ", bullets:[
+            "ଭାରତର ଉତ୍ତରରେ ଅବସ୍ଥିତ, ବିଶ୍ୱର <span class='kw'>ସର୍ବୋଚ୍ଚ ଓ ସର୍ବନବୀନ ଭାଙ୍ଗା ପର୍ବତ</span> (fold mountains)।",
+            "ତିନି ମୁଖ୍ୟ ଶ୍ରେଣୀରେ ବିଭକ୍ତ: <span class='kw'>ହିମାଦ୍ରି</span> (ସର୍ବୋଚ୍ଚ, ମୁଖ୍ୟ ହିମାଳୟ), <span class='kw'>ହିମାଚଳ</span> (ମଧ୍ୟ ହିମାଳୟ), ଓ <span class='kw'>ଶିୱାଲିକ</span> (ବାହ୍ୟ ହିମାଳୟ, ସର୍ବନିମ୍ନ)।",
+            "ଭାରତର ସର୍ବୋଚ୍ଚ ଶିଖର <span class='kw'>କାଞ୍ଚନଜଙ୍ଘା</span> (ସିକ୍କିମ) ଏହି ପର୍ବତମାଳାରେ ଅଛି।"
+          ]}
+        ],
+        terms:[
+          {term:"ଭାଙ୍ଗା ପର୍ବତ (Fold Mountains)", def:"ଦୁଇଟି ଭୂ-ପ୍ଲେଟ ମିଳିତ ହେବା ଫଳରେ ମାଟି ଭାଙ୍ଗି ଉପରକୁ ଉଠି ସୃଷ୍ଟି ହୋଇଥିବା ପର୍ବତ, ଯେପରି ହିମାଳୟ।"}
+        ],
+        quiz:[
+          {q:"ଭାରତର ଉତ୍ତରରେ କେଉଁ ପର୍ବତମାଳା ଅଛି?", opts:["ହିମାଳୟ","ପଶ୍ଚିମ ଘାଟ","ପୂର୍ବ ଘାଟ","ଆରାବଲ୍ଲୀ"], correct:0}
+        ],
+        longQ:{
+          q:"ଭାରତର ପ୍ରାକୃତିକ ବିଭାଗଗୁଡ଼ିକୁ ବର୍ଣ୍ଣନା କର। (5 ମାର୍କ)",
+          answer:"ଭାରତକୁ ମୁଖ୍ୟତଃ ପାଞ୍ଚୋଟି ପ୍ରାକୃତିକ ବିଭାଗରେ ବିଭକ୍ତ କରାଯାଏ।..."
+        }
+      },
+      {id:"g9-3", title:"ଭାରତ — ବିପତି ଓ ବିପର୍ଯ୍ୟୟ", status:"soon"},
+      {id:"g9-4", title:"ଭାରତର ନଦୀ", status:"soon"},
+      {id:"g9-5", title:"ଜଳବାୟୁ", status:"soon"},
+      {id:"g9-6", title:"ପ୍ରାକୃତିକ ଉଭିଦ", status:"soon"},
+      {id:"g9-7", title:"ବନ୍ୟପ୍ରାଣୀ", status:"soon"},
+      {id:"g9-8", title:"ଜନସଂଖ୍ୟା", status:"soon"}
+    ] }
+  },
+  10: {
+    English: { icon:"&#9998;", color:"#2F6F5E", chapters:[
+      {
+        id:"e10-pattern", title:"&#128203; ପରୀକ୍ଷା ପ୍ୟାଟର୍ନ (Marks Distribution)", status:"ready",
+        meta:"Class 10 · English (SLE) · Exam Pattern",
+        sections:[
+          { icon:"&#128221;", title:"Part-I — Objective (50 ମାର୍କ, 1 ଘଣ୍ଟା)", bullets:[
+            "Prose — 5 ପ୍ରଶ୍ନ (1×5 = 5 ମାର୍କ)",
+            "Poetry — 10 ପ୍ରଶ୍ନ (1×10 = 10 ମାର୍କ)",
+            "Non-Detailed Study — 10 ପ୍ରଶ୍ନ (1×10 = 10 ମାର୍କ)",
+            "Language & Vocabulary — 10 ପ୍ରଶ୍ନ (1×10 = 10 ମାର୍କ)",
+            "Grammar — 10 ପ୍ରଶ୍ନ (1×10 = 10 ମାର୍କ)",
+            "Translation into English — (1×5 = 5 ମାର୍କ)"
+          ]}
+        ],
+        terms:[{term:"Grand Total", def:"Part-I (50) + Part-II (50) = 100 ମାର୍କ — ଏହି ପ୍ୟାଟର୍ନ ଅନୁସାରେ ପ୍ରସ୍ତୁତି କରନ୍ତୁ।"}],
+        quiz:[
+          {q:"Part-I (Objective) ମୋଟ କେତେ ମାର୍କର?", opts:["50","40","60","100"], correct:0}
+        ]
+      },
+      {id:"e10-d1", title:"(Detailed) All Things Bright and Beautiful", status:"soon"}
+    ] },
+    History: { icon:"&#127963;", color:"#8B3A2F", chapters:[
+      {id:"h10-1", title:"ଭାରତୀୟ ଜାତୀୟ ଆନ୍ଦୋଳନରେ ଗାନ୍ଧିଜୀଙ୍କ ଆବିର୍ଭାବ", status:"soon"},
+      {id:"h10-2", title:"ଭାରତରେ ଅସହଯୋଗ ଆନ୍ଦୋଳନ ଓ ଓଡ଼ିଶାରେ ଏହାର ପ୍ରଭାବ", status:"soon"}
+    ] },
+    Geography: { icon:"&#127760;", color:"#C9852E", chapters:[] }
+  }
+};
+
+/* ---------------- STATE VARIABLES ---------------- */
+let currentClass = 9;
+let currentSubject = null;
+let mode = 'study';
+let readChapters = new Set();
+let editorClass = 9;
+let editingChapterId = null; 
+let quizRowCount = 0;
+let xp = 0;
+let streak = 1; 
+
+/* ---------------- NEW LOCAL STORAGE FUNCTIONS ---------------- */
+function saveProgress() {
+  const progressData = {
+    xp: xp,
+    streak: streak,
+    readChapters: Array.from(readChapters)
+  };
+  localStorage.setItem('sikshya_sathi_progress', JSON.stringify(progressData));
+}
+
+function loadProgress() {
+  const savedData = localStorage.getItem('sikshya_sathi_progress');
+  if (savedData) {
+    const parsedData = JSON.parse(savedData);
+    xp = parsedData.xp || 0;
+    streak = parsedData.streak || 1;
+    readChapters = new Set(parsedData.readChapters || []);
+  }
+  document.getElementById('xpCount').textContent = xp;
+  document.getElementById('streakCount').textContent = streak;
+}
+/* ----------------------------------------------------------- */
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+function xpToast(msg){
+  let el = document.getElementById('xpToastEl');
+  if(!el){ el = document.createElement('div'); el.id='xpToastEl'; el.className='xp-toast'; document.body.appendChild(el); }
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(window._xpTOId);
+  window._xpTOId = setTimeout(()=>el.classList.remove('show'), 1400);
+}
+
+function awardXP(amount, reason){
+  xp += amount;
+  document.getElementById('xpCount').textContent = xp;
+  xpToast('+'+amount+' XP — '+reason);
+  saveProgress(); // <-- XP Badhne par data save karo
+}
+
+function updateStreakDisplay(){ 
+  document.getElementById('streakCount').textContent = streak; 
+}
+
+function totalChapters(){
+  let t=0;
+  for(const cls of [9,10]) for(const s in DATA[cls]) t += DATA[cls][s].chapters.length;
+  return t;
+}
+
+function updateProgress(){
+  const total = totalChapters();
+  const circumference = 276.5;
+  const pct = total ? readChapters.size/total : 0;
+  document.getElementById('wheelProgress').style.strokeDashoffset = circumference - (circumference*pct);
+}
+
+function setMode(m){
+  mode = m;
+  document.getElementById('modeStudyBtn').classList.toggle('active', m==='study');
+  document.getElementById('modeEditBtn').classList.toggle('active', m==='editor');
+  if(m==='study'){ goHome(); }
+  else { renderEditorList(); showScreen('editor'); }
+}
+
+function setClass(c){
+  currentClass = c;
+  document.getElementById('btn-class-9').classList.toggle('active', c===9);
+  document.getElementById('btn-class-10').classList.toggle('active', c===10);
+  renderSubjects();
+}
+
+function renderSubjects(){
+  const grid = document.getElementById('subjectGrid');
+  grid.innerHTML = '';
+  const subs = DATA[currentClass];
+  for(const name in subs){
+    const s = subs[name];
+    const readInSub = s.chapters.filter(c=>readChapters.has(c.id)).length;
+    const pct = s.chapters.length ? Math.round((readInSub/s.chapters.length)*100) : 0;
+    const div = document.createElement('div');
+    div.className = 'subject-card';
+    div.onclick = ()=>openSubject(name);
+    div.innerHTML = `
+      <div class="subject-icon" style="background:${s.color}">${s.icon}</div>
+      <div class="subject-info"><h3>${name}</h3><p>${s.chapters.length} ଅଧ୍ୟାୟ · Class ${currentClass}</p></div>
+      <div class="subject-arrow">&#8250;</div>
+      <div class="subject-progress-track"><div class="subject-progress-fill" style="width:${pct}%"></div></div>
+    `;
+    grid.appendChild(div);
+  }
+}
+
+function openSubject(name){
+  currentSubject = name;
+  const s = DATA[currentClass][name];
+  document.getElementById('chapterListTitle').textContent = `${name} — Class ${currentClass}`;
+  const searchBox = document.getElementById('chapterSearchBox');
+  if(searchBox) searchBox.value = '';
+  const list = document.getElementById('chapterList');
+  list.innerHTML = '';
+  if(s.chapters.length===0){
+    list.innerHTML = `<div class="placeholder-note">ଏହି ବିଷୟରେ ଏପର୍ଯ୍ୟନ୍ତ କୌଣସି ଅଧ୍ୟାୟ ଯୋଡ଼ା ହୋଇନାହିଁ। "Content Editor" mode ରେ ଯାଇ ଏଠାରେ ଅଧ୍ୟାୟ ଯୋଡ଼ନ୍ତୁ।</div>`;
+    showScreen('chapters');
+    return;
+  }
+  const wrap = document.createElement('div');
+  wrap.className = 'path-wrap';
+  wrap.id = 'pathWrap';
+  wrap.innerHTML = '<div class="path-line"></div>';
+  s.chapters.forEach((ch,i)=>{
+    const done = readChapters.has(ch.id);
+    const soon = ch.status === 'soon';
+    const row = document.createElement('div');
+    row.className = 'path-node-row ' + (i%2===0 ? 'left':'right');
+    row.setAttribute('data-title', ch.title.toLowerCase());
+    let tag = 'Tap to start';
+    if(soon) tag = 'Coming soon';
+    else if(done) tag = 'Complete — +10 XP earned';
+    row.innerHTML = `
+      <div class="path-node ${done?'done':''}" style="${soon?'opacity:0.55; border-style:dashed;':''}" onclick="openChapter('${ch.id}')">${done ? '&#10003;' : i+1}</div>
+      <div class="path-card od" style="${soon?'opacity:0.6;':''}" onclick="openChapter('${ch.id}')">${ch.title}<span class="tag">${tag}</span></div>
+    `;
+    wrap.appendChild(row);
+  });
+  list.appendChild(wrap);
+  showScreen('chapters');
+}
+
+function filterChapterList(query){
+  const q = query.trim().toLowerCase();
+  const wrap = document.getElementById('pathWrap');
+  if(!wrap) return;
+  wrap.querySelectorAll('.path-node-row').forEach(row=>{
+    const title = row.getAttribute('data-title') || '';
+    row.style.display = title.includes(q) ? 'flex' : 'none';
+  });
+}
+
+function findChapter(id){
+  for(const cls of [9,10]) for(const s in DATA[cls]){
+    const found = DATA[cls][s].chapters.find(c=>c.id===id);
+    if(found) return {chapter:found, cls, subject:s};
+  }
+  return null;
+}
+
+let currentChapterId = null;
+
+function openChapter(id){
+  const res = findChapter(id);
+  if(!res) return;
+  const c = res.chapter;
+  currentChapterId = id;
+
+  if(c.status === 'soon'){
+    document.getElementById('hubMeta').textContent = c.meta || `${res.subject} · Class ${res.cls}`;
+    document.getElementById('hubTitle').textContent = c.title;
+    document.getElementById('screen-chapterhub').innerHTML = `<div class="meta">${c.meta||''}</div><h2 class="display od" style="margin:2px 0 18px;">${c.title}</h2><div class="placeholder-note">ଏହି ଅଧ୍ୟାୟର notes ଏପର୍ଯ୍ୟନ୍ତ ପ୍ରସ୍ତୁତ ହୋଇନାହିଁ। Content Editor mode ରେ ଯାଇ ଏହାକୁ ଯୋଡ଼ି ପାରିବେ, କିମ୍ବା ଅନ୍ୟ ଏକ ready chapter ଖୋଲି ଦେଖନ୍ତୁ।</div>`;
+    showScreen('chapterhub');
+    return;
+  }
+
+  const firstTime = !readChapters.has(id);
+  readChapters.add(id);
+  updateProgress();
+  
+  if(firstTime) {
+    awardXP(10, c.title);
+  } else {
+    saveProgress(); // <-- Ensure read progress is saved even if it's not the first time
+  }
+
+  document.getElementById('hubMeta').textContent = c.meta || `${res.subject} · Class ${res.cls}`;
+  document.getElementById('hubTitle').textContent = c.title;
+  document.getElementById('hubQuizCount').textContent = `${(c.quiz||[]).length} ପ୍ରଶ୍ନ`;
+  showScreen('chapterhub');
+}
+
+function openNotes(){
+  const res = findChapter(currentChapterId);
+  if(!res) return;
+  const c = res.chapter;
+  document.getElementById('notesMeta').textContent = c.meta || '';
+  document.getElementById('notesTitle').textContent = c.title;
+
+  let html = '';
+  if(c.diagram){
+    html += `<div class="diagram-card">${c.diagram.svg}<div class="diagram-caption od">${c.diagram.caption||''}</div></div>`;
+  }
+  if(c.profile){
+    html += `<div class="profile-box od"><div class="pb-head">ସଂକ୍ଷିପ୍ତ ପରିଚୟ</div>`;
+    for(const k in c.profile){ html += `<div class="profile-row"><span class="k">${k}</span><span class="v">${c.profile[k]}</span></div>`; }
+    html += `</div>`;
+  }
+  if(c.sections){
+    c.sections.forEach(sec=>{
+      html += `<div class="note-section od">
+        <div class="note-section-head"><div class="ico">${sec.icon}</div><h5>${sec.title}</h5></div>
+        <ul class="note-bullets">${sec.bullets.map(b=>`<li>${b}</li>`).join('')}</ul>
+      </div>`;
+    });
+  } else if(c.summary){
+    html += `<div class="note-card"><h4>ବିସ୍ତୃତ ବର୍ଣ୍ଣନା</h4><p class="od">${c.summary}</p></div>`;
+    if(c.points) html += `<div class="note-card"><h4>ମୁଖ୍ୟ ବିନ୍ଦୁ</h4><ul class="od">${c.points.map(p=>`<li>${p}</li>`).join('')}</ul></div>`;
+  }
+  if(c.terms && c.terms.length){
+    html += `<div class="section-label">ଜରୁରୀ ଶବ୍ଦ (Key Terms) — tap କରନ୍ତୁ</div>`;
+    c.terms.forEach(t=>{ html += `<div class="term-box od" onclick="openConcept('${t.term.replace(/'/g,"\\'")}')"><b>${t.term} &#8250;</b><span>${t.def}</span></div>`; });
+  }
+  if(c.timeline && c.timeline.length){
+    html += `<div class="section-label">Timeline</div><div class="timeline-wrap od"><div class="timeline-line"></div>`;
+    c.timeline.forEach(t=>{ html += `<div class="timeline-item"><span class="yr">${t.yr}</span><span class="ev">${t.ev}</span></div>`; });
+    html += `</div>`;
+  }
+  document.getElementById('notesBody').innerHTML = html;
+  showScreen('notes');
+}
+
+function openLongQPage(){
+  const res = findChapter(currentChapterId);
+  if(!res) return;
+  const c = res.chapter;
+  document.getElementById('longqMeta').textContent = c.title;
+  let html = '';
+  if(c.longQ){
+    html = `<div class="note-section od" style="border-left:4px solid var(--maroon);">
+      <p style="font-weight:700; font-size:13.5px; color:var(--maroon); margin:0 0 10px;">${c.longQ.q}</p>
+      <p style="font-size:13.5px; line-height:1.85; white-space:pre-line; margin:0;">${c.longQ.answer}</p>
+    </div>`;
+  } else {
+    html = `<div class="placeholder-note">ଏହି ଅଧ୍ୟାୟ ପାଇଁ long question ଏପର୍ଯ୍ୟନ୍ତ ଯୋଡ଼ା ହୋଇନାହିଁ।</div>`;
+  }
+  document.getElementById('longqBody').innerHTML = html;
+  showScreen('longq-page');
+}
+
+function openQuizPage(){
+  const res = findChapter(currentChapterId);
+  if(!res) return;
+  const c = res.chapter;
+  document.getElementById('quizMeta').textContent = c.title;
+  let html = '';
+  (c.quiz||[]).forEach((q,qi)=>{
+    html += `<div class="quiz-q"><p class="qtext od">${qi+1}. ${q.q}</p>`;
+    q.opts.forEach((opt,oi)=>{ html += `<button class="opt od" onclick="answerQuiz(this, ${oi===q.correct})">${opt}</button>`; });
+    html += `</div>`;
+  });
+  if(!html) html = `<div class="placeholder-note">ଏହି ଅଧ୍ୟାୟ ପାଇଁ quiz ଏପର୍ଯ୍ୟନ୍ତ ଯୋଡ଼ା ହୋଇନାହିଁ।</div>`;
+  document.getElementById('quizBody').innerHTML = html;
+  showScreen('quiz-page');
+}
+
+function answerQuiz(btn, isCorrect){
+  const siblings = btn.parentElement.querySelectorAll('.opt');
+  siblings.forEach(b=>b.style.pointerEvents='none');
+  btn.classList.add(isCorrect ? 'correct' : 'wrong');
+  if(isCorrect) awardXP(2, 'ଠିକ୍ ଉତ୍ତର');
+}
+
+function openConcept(term){
+  // Basic mock concept function for terms missing in local DB.
+  document.getElementById('conceptTitle').textContent = term;
+  document.getElementById('conceptBody').innerHTML = `<div class="note-card od"><p>Concept details for ${term}</p></div>`;
+  showScreen('concept');
+}
+
+let screenHistory = ['home'];
+function showScreen(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  document.getElementById('backRow').style.display = (name==='home') ? 'none' : 'flex';
+  if(screenHistory[screenHistory.length-1] !== name) screenHistory.push(name);
+}
+function goBack(){
+  screenHistory.pop();
+  const target = screenHistory.length ? screenHistory[screenHistory.length-1] : 'home';
+  screenHistory.pop();
+  showScreen(target);
+}
+function goHome(){ renderSubjects(); screenHistory=['home']; showScreen('home'); }
+
+
+/* ---------------- EDITOR ---------------- */
+function setEditorClass(c){
+  editorClass = c;
+  document.getElementById('ebtn-class-9').classList.toggle('active', c===9);
+  document.getElementById('ebtn-class-10').classList.toggle('active', c===10);
+  renderEditorList();
+}
+function renderEditorList(){
+  const subject = document.getElementById('editorSubjectSelect').value;
+  const list = document.getElementById('editorChapterList');
+  list.innerHTML = '';
+  const chapters = DATA[editorClass][subject].chapters;
+  if(chapters.length===0){ list.innerHTML = `<div class="placeholder-note">ଏଠାରେ ଏପର୍ଯ୍ୟନ୍ତ କିଛି ନାହିଁ।</div>`; return; }
+  chapters.forEach(ch=>{
+    const div = document.createElement('div');
+    div.className = 'editor-list-item';
+    div.innerHTML = `<div class="t od">${ch.title}</div>
+      <button class="chapter-edit-btn" onclick="openChapterForm('${ch.id}')">Edit</button>
+      <button class="chapter-edit-btn" style="background:var(--maroon);" onclick="deleteChapter('${ch.id}')">Delete</button>`;
+    list.appendChild(div);
+  });
+}
+function deleteChapter(id){
+  const subject = document.getElementById('editorSubjectSelect').value;
+  const arr = DATA[editorClass][subject].chapters;
+  const idx = arr.findIndex(c=>c.id===id);
+  if(idx>-1){ arr.splice(idx,1); renderEditorList(); toast('ଅଧ୍ୟାୟ ହଟାଇ ଦିଆଗଲା'); }
+}
+
+function openChapterForm(id){
+  editingChapterId = id;
+  document.getElementById('quizBuilder').innerHTML = '';
+  quizRowCount = 0;
+  if(id){
+    const res = findChapter(id);
+    document.getElementById('formHeading').textContent = 'ଅଧ୍ୟାୟ Edit କରନ୍ତୁ';
+    document.getElementById('f-title').value = res.chapter.title;
+    document.getElementById('f-summary').value = res.chapter.summary || '';
+    document.getElementById('f-points').value = (res.chapter.points||[]).join('\n');
+    (res.chapter.quiz||[]).forEach(q=>addQuizRow(q));
+  } else {
+    document.getElementById('formHeading').textContent = 'ନୂଆ ଅଧ୍ୟାୟ ଯୋଡ଼ନ୍ତୁ';
+    document.getElementById('f-title').value = '';
+    document.getElementById('f-summary').value = '';
+    document.getElementById('f-points').value = '';
+    addQuizRow();
+  }
+  showScreen('form');
+}
+
+function addQuizRow(existing){
+  quizRowCount++;
+  const rid = 'q'+quizRowCount+'_'+Date.now();
+  const div = document.createElement('div');
+  div.className = 'qbuilder';
+  div.id = rid;
+  const q = existing || {q:'', opts:['','','',''], correct:0};
+  div.innerHTML = `
+    <div class="qhead"><b>ପ୍ରଶ୍ନ</b><button class="remove-q" onclick="document.getElementById('${rid}').remove()">Remove</button></div>
+    <input type="text" class="qb-question" placeholder="ପ୍ରଶ୍ନ ଲେଖନ୍ତୁ" value="${(q.q||'').replace(/"/g,'&quot;')}">
+    <div style="margin-top:8px;">
+      ${[0,1,2,3].map(i=>`
+        <div class="opt-row">
+          <input type="radio" name="correct_${rid}" class="qb-correct" value="${i}" ${q.correct===i?'checked':''}>
+          <input type="text" class="qb-opt" placeholder="Option ${i+1}" value="${(q.opts[i]||'').replace(/"/g,'&quot;')}">
+        </div>
+      `).join('')}
+    </div>
+    <div class="hint">ସାମ୍ନାରେ ଥିବା ବଟନ୍‌ରେ ଠିକ୍ ଉତ୍ତର ବାଛନ୍ତୁ</div>
+  `;
+  document.getElementById('quizBuilder').appendChild(div);
+}
+
+function saveChapter(){
+  const subject = document.getElementById('editorSubjectSelect').value;
+  const title = document.getElementById('f-title').value.trim();
+  if(!title){ toast('ଅଧ୍ୟାୟର ନାମ ଲେଖନ୍ତୁ'); return; }
+  const summary = document.getElementById('f-summary').value.trim();
+  const points = document.getElementById('f-points').value.split('\n').map(s=>s.trim()).filter(Boolean);
+
+  const quiz = [];
+  document.querySelectorAll('#quizBuilder .qbuilder').forEach(block=>{
+    const qtext = block.querySelector('.qb-question').value.trim();
+    const opts = [...block.querySelectorAll('.qb-opt')].map(i=>i.value.trim());
+    const checkedRadio = block.querySelector('.qb-correct:checked');
+    const correct = checkedRadio ? parseInt(checkedRadio.value) : 0;
+    if(qtext && opts.every(o=>o)) quiz.push({q:qtext, opts, correct});
+  });
+
+  const arr = DATA[editorClass][subject].chapters;
+  if(editingChapterId){
+    const existing = arr.find(c=>c.id===editingChapterId);
+    existing.title = title; existing.summary = summary; existing.points = points; existing.quiz = quiz;
+    existing.meta = `Class ${editorClass} · ${subject}`;
+  } else {
+    const id = 'c'+editorClass+'_'+subject+'_'+Date.now();
+    arr.push({ id, title, status:'ready', meta:`Class ${editorClass} · ${subject}`, summary, points, quiz });
+  }
+  toast('Chapter save ହୋଇଗଲା');
+  setMode('editor');
+}
+
+/* ---------------- IMPORT / EXPORT ---------------- */
+function exportJSON(){
+  const blob = new Blob([JSON.stringify(DATA, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'sikshya-sathi-content.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('JSON file download ହେଲା');
+}
+function importJSON(evt){
+  const file = evt.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const parsed = JSON.parse(e.target.result);
+      DATA = parsed;
+      readChapters = new Set();
+      updateProgress();
+      renderEditorList();
+      toast('Content load ହୋଇଗଲା');
+    }catch(err){
+      toast('File load ହେଲା ନାହିଁ — JSON format check କରନ୍ତୁ');
+    }
+  };
+  reader.readAsText(file);
+}
+
+/* init */
+loadProgress(); // <-- App start hote hi XP aur progress load hoga
+renderSubjects();
+updateProgress();
+updateStreakDisplay();
+</script>
+</body>
+</html>
