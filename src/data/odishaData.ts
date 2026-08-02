@@ -237,6 +237,114 @@ export const CHAPTERS_DATA: Chapter[] = [
     isPremium: false
   },
 
+  {
+    id: 'c10_eng_ch3',
+    classLevel: 'Class 10',
+    subjectId: 'english',
+    chapterNumber: 3,
+    titleEnglish: 'The Solitary Reaper',
+    titleOdia: 'ଦ ସଲିଟାରୀ ରିପର (ଏକାକୀ ଫସଲ କଟାଳୀ) - William Wordsworth',
+    examWeightageMarks: 6,
+    learningObjectives: [
+      'Appreciate Wordsworth as a Romantic poet who finds deep meaning in simple rural life.',
+      'Understand how the poet compares the girl\'s song to the nightingale and the cuckoo.',
+      'Learn poetic devices used: simile, rhetorical question, and imagery.',
+      'Practice BSE Odisha style 2-mark and 5-mark poem-based questions.'
+    ],
+    realLifeApplications: [
+      'Shows how ordinary moments and simple people can move us deeply even without understanding their exact words.',
+      'Teaches appreciation of nature and rural life, and how music/art can be universal despite language barriers.'
+    ],
+    summaryEnglish: 'While travelling through the Scottish Highlands, the poet notices a young girl working alone in a field, cutting and binding grain while singing a sad, beautiful song in Gaelic. He cannot understand her words, but her melancholy tune moves him so deeply that he compares it to the song of a nightingale welcoming tired travellers in the Arabian desert and a cuckoo announcing spring in the Hebrides. He wonders whether she sings of old sorrows, battles, or everyday troubles that recur again and again. Whatever the theme, her song seems to have no end. The poet watches and listens motionless, and even after he has walked far away, the melody stays in his heart.',
+    summaryOdia: 'ସ୍କଟଲାଣ୍ଡର ପାହାଡ଼ିଆ ଅଞ୍ଚଳରେ ଭ୍ରମଣ କରୁଥିବା ସମୟରେ କବି ଏକ ଯୁବତୀକୁ ଏକୁଟିଆ ଫସଲ କାଟୁଥିବା ଓ ବାନ୍ଧୁଥିବା ଦେଖନ୍ତି, ଯିଏ ଏକ ଦୁଃଖଦ ମଧୁର ଗୀତ ଗାଉଥାନ୍ତି। କବି ତାଙ୍କ ଭାଷା ବୁଝି ପାରନ୍ତି ନାହିଁ, କିନ୍ତୁ ସେହି ସ୍ୱର ତାଙ୍କୁ ଏତେ ପ୍ରଭାବିତ କରେ ଯେ ସେ ଏହାକୁ ମରୁଭୂମିରେ ଥକିଯାଇଥିବା ଯାତ୍ରୀଙ୍କ ପାଇଁ ବୁଲବୁଲ ପକ୍ଷୀର ଗୀତ ଓ ବସନ୍ତ ଘୋଷଣା କରୁଥିବା କୋଇଲି ସହିତ ତୁଳନା କରନ୍ତି। ଗୀତ ପୁରୁଣା ଦୁଃଖ, ଯୁଦ୍ଧ, କିମ୍ବା ପ୍ରତିଦିନର ସାଧାରଣ କଷ୍ଟ ବିଷୟରେ କି ନାହିଁ, ତାହା ସେ ଜାଣି ପାରନ୍ତି ନାହିଁ। କବି ସ୍ଥିର ହୋଇ ଶୁଣନ୍ତି, ଓ ବହୁ ଦୂର ଚାଲିଗଲା ପରେ ମଧ୍ୟ ସେହି ସଙ୍ଗୀତ ତାଙ୍କ ହୃଦୟରେ ରହିଯାଏ।',
+    lineByLineExplanation: [
+      {
+        paragraphNo: 1,
+        textEnglish: 'Stanza 1: The poet asks the reader to behold (look at) a solitary Highland girl reaping and singing by herself in the field. He requests others passing by to either stop and listen quietly or walk past gently, because her sad song fills the whole valley.',
+        textOdia: 'ପ୍ରଥମ ପଦ: କବି ପାଠକମାନଙ୍କୁ ଏକ ଏକୁଟିଆ ପାହାଡ଼ିଆ ଝିଅକୁ ଫସଲ କାଟି ଗୀତ ଗାଉଥିବା ଦେଖିବାକୁ କୁହନ୍ତି। ସେ ଯାତ୍ରୀମାନଙ୍କୁ ଅନୁରୋଧ କରନ୍ତି ଯେ ହୁଏତ ଠିଆ ହୋଇ ଚୁପଚାପ ଶୁଣନ୍ତୁ, ନଚେତ୍ ଧୀରେ ଚାଲିଯାଆନ୍ତୁ, କାରଣ ତାଙ୍କର ଦୁଃଖଦ ଗୀତ ସମଗ୍ର ଉପତ୍ୟକାକୁ ଭରି ଦେଇଛି।',
+        keyNote: 'The word "solitary" is repeated to stress her aloneness — an important word for objective questions.'
+      },
+      {
+        paragraphNo: 2,
+        textEnglish: 'Stanza 2: The poet says her voice is more welcome than a nightingale singing to weary travellers resting in the shade of an Arabian desert oasis, and sweeter than a cuckoo\'s call breaking the silence of spring seas among the Hebrides islands.',
+        textOdia: 'ଦ୍ୱିତୀୟ ପଦ: କବି କୁହନ୍ତି ତାଙ୍କ ସ୍ୱର ମରୁଭୂମିରେ ଥକିଯାଇଥିବା ଯାତ୍ରୀଙ୍କୁ ଛାଇରେ ବିଶ୍ରାମ ଦେଉଥିବା ବୁଲବୁଲ ପକ୍ଷୀଠାରୁ ଅଧିକ ସ୍ୱାଗତଯୋଗ୍ୟ, ଏବଂ ହେବ୍ରାଇଡ୍ସ ଦ୍ୱୀପପୁଞ୍ଜରେ ବସନ୍ତ ନୀରବତାକୁ ଭଙ୍ଗ କରୁଥିବା କୋଇଲିର ସ୍ୱରଠାରୁ ଅଧିକ ମଧୁର।',
+        keyNote: 'Two similes used here: nightingale (Arabian desert) and cuckoo-bird (Hebrides) — commonly asked as MCQ/fill-in-the-blank.'
+      },
+      {
+        paragraphNo: 3,
+        textEnglish: 'Stanza 3: The poet wonders what the girl is singing about — perhaps old, unhappy, far-off battles and events, or maybe a simple, familiar sorrow, loss, or pain that has happened before and could happen again in ordinary life.',
+        textOdia: 'ତୃତୀୟ ପଦ: କବି ଭାବନ୍ତି ଝିଅଟି କ\'ଣ ବିଷୟରେ ଗାଉଛନ୍ତି — ହୁଏତ ପୁରୁଣା, ଦୁଃଖଦ, ଦୂର ଯୁଦ୍ଧ ଓ ଘଟଣା ବିଷୟରେ, କିମ୍ବା ହୁଏତ ଏକ ସାଧାରଣ, ପରିଚିତ ଦୁଃଖ କିମ୍ବା କ୍ଷତି ବିଷୟରେ ଯାହା ପୂର୍ବରୁ ଘଟିଛି ଏବଂ ପୁଣି ଘଟିପାରେ।',
+        keyNote: 'Poet uses a rhetorical question here — he never gets or needs an answer.'
+      },
+      {
+        paragraphNo: 4,
+        textEnglish: 'Stanza 4: Whatever her song was about, it seemed to the poet as if it had no end — she sang as though she could go on forever, bent over her work. The poet watched her in silence, and long after he had left and climbed the hill, the music continued to live on in his heart.',
+        textOdia: 'ଚତୁର୍ଥ ପଦ: ତାଙ୍କ ଗୀତ ଯାହା ବିଷୟରେ ହେଉ ନା କାହିଁକି, ତାହା କବିଙ୍କୁ ଅନନ୍ତ ମନେ ହେଲା — ସେ ଯେମିତି ସର୍ବଦା କାମ କରି ଗାଉଥିବେ। କବି ନୀରବରେ ଦେଖିଲେ, ଓ ପାହାଡ଼ ଚଢ଼ି ବହୁ ଦୂର ଚାଲିଗଲା ପରେ ମଧ୍ୟ ସେହି ସଙ୍ଗୀତ ତାଙ୍କ ହୃଦୟରେ ରହିଗଲା।',
+        keyNote: 'Last two lines are frequently asked as a 2-mark quote-based question: music lives in the heart "long after it was heard no more."'
+      }
+    ],
+    keyWords: [
+      { word: 'Solitary', meaningOdia: 'ଏକୁଟିଆ', meaningEnglish: 'Alone, single' },
+      { word: 'Reaping', meaningOdia: 'ଫସଲ କଟା', meaningEnglish: 'Cutting a crop of grain' },
+      { word: 'Melancholy', meaningOdia: 'ବିଷାଦମୟ', meaningEnglish: 'A feeling of deep sadness' },
+      { word: 'Vale', meaningOdia: 'ଉପତ୍ୟକା', meaningEnglish: 'A valley' },
+      { word: 'Hebrides', meaningOdia: 'ହେବ୍ରାଇଡ୍ସ ଦ୍ୱୀପପୁଞ୍ଜ', meaningEnglish: 'A group of islands off the west coast of Scotland' }
+    ],
+    shortQuestions: [
+      {
+        id: 'sr_sq1',
+        qEnglish: 'What was the Highland girl doing when the poet saw her?',
+        qOdia: 'କବି ଝିଅକୁ ଦେଖିଲାବେଳେ ସେ କ\'ଣ କରୁଥିଲେ?',
+        answerEnglish: 'She was working alone in the field, cutting and binding grain while singing a sad, beautiful song.',
+        answerOdia: 'ସେ ଏକୁଟିଆ ଫସଲ କାଟି ବାନ୍ଧୁଥିଲେ ଓ ସାଙ୍ଗକୁ ଏକ ଦୁଃଖଦ ମଧୁର ଗୀତ ଗାଉଥିଲେ।',
+        marks: 2
+      },
+      {
+        id: 'sr_sq2',
+        qEnglish: 'With which two birds does the poet compare the girl\'s song?',
+        qOdia: 'କବି ଝିଅର ଗୀତକୁ କେଉଁ ଦୁଇଟି ପକ୍ଷୀ ସହିତ ତୁଳନା କରନ୍ତି?',
+        answerEnglish: 'He compares it to the nightingale singing to weary desert travellers and the cuckoo announcing spring among the Hebrides.',
+        answerOdia: 'ସେ ଏହାକୁ ମରୁଭୂମି ଯାତ୍ରୀଙ୍କ ପାଇଁ ଗାଉଥିବା ବୁଲବୁଲ ଓ ହେବ୍ରାଇଡ୍ସରେ ବସନ୍ତ ଘୋଷଣା କରୁଥିବା କୋଇଲି ସହିତ ତୁଳନା କରନ୍ତି।',
+        marks: 2
+      }
+    ],
+    longQuestions: [
+      {
+        id: 'sr_lq1',
+        qEnglish: 'Why does the poet say the girl\'s song "seemed to have no ending"? Explain with reference to the poem.',
+        qOdia: 'କବି କାହିଁକି କୁହନ୍ତି ଝିଅର ଗୀତର "କୌଣସି ଶେଷ ନାହିଁ" ଥିଲା ପରି ମନେ ହେଉଥିଲା? କବିତା ଆଧାରରେ ବ୍ୟାଖ୍ୟା କର।',
+        answerEnglish: 'The girl sang continuously as she bent over her sickle, cutting and binding grain, and her song seemed to flow endlessly with her steady rhythm of work. The poet felt her song had no fixed end because she kept singing the same tune again and again as she worked, suggesting the timeless, ongoing nature of rural labour and folk music.',
+        answerOdia: 'ଝିଅ ତାଙ୍କ କାସ୍ତି ଉପରେ ଝୁକି ଫସଲ କାଟୁଥିବା ସମୟରେ ନିରନ୍ତର ଗାଉଥିଲେ, ଏବଂ ତାଙ୍କ କାର୍ଯ୍ୟର ସ୍ଥିର ତାଳ ସହିତ ଗୀତ ମଧ୍ୟ ଅନନ୍ତ ଭାବେ ପ୍ରବାହିତ ହେଉଥିଲା ପରି ମନେ ହେଲା। ଏହା ଗ୍ରାମୀଣ ଶ୍ରମ ଓ ଲୋକଗୀତର ସ୍ଥାୟୀ, ନିରନ୍ତର ପ୍ରକୃତିକୁ ସୂଚିତ କରେ।',
+        marks: 5
+      }
+    ],
+    pyqs: [
+      { year: '2023', question: 'What does the poet request the passers-by to do on seeing the reaper?', answer: 'He requests them to either stop and listen quietly to her song, or to pass by gently without disturbing her.', marks: 2 },
+      { year: '2022', question: 'What guesses does the poet make about the theme of the girl\'s song?', answer: 'He guesses it could be about old, sad, far-off battles, or about a simple, familiar everyday sorrow that has happened before and may happen again.', marks: 3 }
+    ],
+    hotsQuestions: [
+      { question: 'Even though the poet does not understand the girl\'s language, why is he so deeply moved by her song?', answer: 'This shows that the beauty and emotion of music can be felt through tone and melody alone, without needing to understand the exact words — proving that art and feeling are universal.' }
+    ],
+    fillInBlanks: [
+      { id: 'sr_fib1', question: 'The poet compares the girl\'s voice to a _______ singing to tired desert travellers.', answer: 'nightingale' },
+      { id: 'sr_fib2', question: 'The cuckoo-bird\'s song breaks the silence of the seas among the _______ islands.', answer: 'Hebrides' }
+    ],
+    trueFalse: [
+      { id: 'sr_tf1', statement: 'The poet understood every word of the girl\'s song.', isTrue: false, explanation: 'The song was in Gaelic and the poet could not understand the words, only the melody moved him.' },
+      { id: 'sr_tf2', statement: 'The music stayed in the poet\'s heart even after he had walked far away.', isTrue: true, explanation: 'The poem ends by saying the music lived in his heart "long after it was heard no more."' }
+    ],
+    matchFollowing: [
+      { left: 'Nightingale', right: 'Sings to Arabian desert travellers' },
+      { left: 'Cuckoo-bird', right: 'Breaks silence of spring in Hebrides' },
+      { left: 'Solitary girl', right: 'Reaping and singing alone' }
+    ],
+    examTips: [
+      'A very common 2-mark question: name the two birds used in similes for the girl\'s song (nightingale and cuckoo).',
+      'For 5-mark answers, always mention that the poet never learns the actual meaning of the song — the beauty lies in not knowing.'
+    ],
+    isPremium: false
+  },
+
   // ---------------- CLASS 10 MATHEMATICS ----------------
   {
     id: 'c10_math_ch1',
@@ -1275,4 +1383,3 @@ export const FLASHCARDS_DATA: Flashcard[] = [
     difficulty: 'Easy'
   }
 ];
-
