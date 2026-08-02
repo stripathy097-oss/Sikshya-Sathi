@@ -42,12 +42,12 @@
             font-family: 'Inter', 'Noto Sans Oriya', sans-serif;
         }
         .glass {
-            background: rgba(255, 255, 255, 0.75);
+            background: rgba(255, 255, 255, 0.82);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
         }
         .dark .glass {
-            background: rgba(30, 41, 59, 0.75);
+            background: rgba(30, 41, 59, 0.82);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
         }
@@ -77,6 +77,8 @@
 </head>
 <body class="bg-brand-bgLight dark:bg-brand-bgDark text-slate-800 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-300">
 
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
     <!-- Top Announcement Bar -->
     <div class="bg-gradient-to-r from-brand-blue to-blue-700 text-white text-xs md:text-sm py-2 px-4 text-center font-medium flex items-center justify-between shadow-sm">
         <div class="container mx-auto flex items-center justify-between">
@@ -87,7 +89,7 @@
             <div class="hidden md:flex items-center space-x-4">
                 <a href="#mock-test" onclick="switchTab('mock-test')" class="hover:underline flex items-center gap-1"><i class="fa-solid fa-bolt text-brand-orange"></i> Live Test</a>
                 <span>|</span>
-                <a href="#admin" onclick="switchTab('admin')" class="hover:underline"><i class="fa-solid fa-lock text-xs"></i> Admin Portal</a>
+                <a href="#admin" onclick="switchTab('admin')" class="hover:underline"><i class="fa-solid fa-user-shield text-xs"></i> Admin CMS Portal</a>
             </div>
         </div>
     </div>
@@ -152,165 +154,164 @@
                 <button onclick="switchTab('mock-test')" class="nav-tab px-3 py-1.5 rounded-lg whitespace-nowrap hover:bg-slate-100 dark:hover:bg-slate-800 text-brand-orange font-bold"><i class="fa-solid fa-vial-circle-check mr-1"></i> Mock Test System</button>
                 <button onclick="switchTab('tools')" class="nav-tab px-3 py-1.5 rounded-lg whitespace-nowrap hover:bg-slate-100 dark:hover:bg-slate-800"><i class="fa-solid fa-screwdriver-wrench mr-1"></i> Study Tools</button>
                 <button onclick="switchTab('downloads')" class="nav-tab px-3 py-1.5 rounded-lg whitespace-nowrap hover:bg-slate-100 dark:hover:bg-slate-800"><i class="fa-solid fa-download mr-1"></i> Download Center</button>
-                <button onclick="switchTab('admin')" class="nav-tab px-3 py-1.5 rounded-lg whitespace-nowrap hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400"><i class="fa-solid fa-user-shield mr-1"></i> Admin</button>
+                <button onclick="switchTab('admin')" class="nav-tab px-3 py-1.5 rounded-lg whitespace-nowrap hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 font-bold"><i class="fa-solid fa-sliders mr-1"></i> Admin & Content Manager</button>
             </div>
         </nav>
     </header>
 
-    <!-- Main Content Container -->
     <main class="flex-grow container mx-auto px-4 py-6">
+        <!-- ... existing content ... -->
+    </main>
 
-        <!-- TAB 1: HOME PAGE -->
-        <section id="tab-home" class="tab-content space-y-8">
-            <!-- Hero Banner -->
-            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-brand-blue via-blue-800 to-indigo-900 text-white p-6 md:p-10 shadow-2xl">
-                <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-brand-orange opacity-20 rounded-full blur-3xl pointer-events-none"></div>
-                <div class="relative z-10 grid md:grid-cols-12 gap-6 items-center">
-                    <div class="md:col-span-8 space-y-4">
-                        <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold text-orange-300 border border-white/10">
-                            <i class="fa-solid fa-graduation-cap"></i> #1 BSE Odisha Board Preparation Platform
-                        </div>
-                        <h2 class="text-2xl sm:text-4xl lg:text-5xl font-black leading-tight">
-                            Master BSE Odisha <span id="heroClassLabel" class="text-brand-orange underline underline-offset-4">Class 10</span> Syllabus with Confidence!
-                        </h2>
-                        <p class="text-slate-200 text-sm md:text-base max-w-xl">
-                            100% Exam-oriented notes, Odia word meanings, step-by-step math solutions, formula sheets, interactive mind maps, and live BSE pattern mock tests.
-                        </p>
-                        <div class="flex flex-wrap gap-3 pt-2">
-                            <button onclick="switchTab('mock-test')" class="px-6 py-3 rounded-xl bg-brand-orange hover:bg-brand-darkOrange text-white font-bold text-sm shadow-lg hover:shadow-orange-500/30 transition transform hover:-translate-y-0.5 flex items-center gap-2 pulse-orange">
-                                <i class="fa-solid fa-play"></i> Start Today's Mock Test
-                            </button>
-                            <button onclick="switchTab('chapter-view')" class="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-sm border border-white/20 backdrop-blur-md transition flex items-center gap-2">
-                                <i class="fa-solid fa-book"></i> Read Quick Notes
-                            </button>
-                        </div>
-                    </div>
-                    <!-- Exam Countdown Timer Box -->
-                    <div class="md:col-span-4 bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/20 text-center space-y-3">
-                        <div class="text-xs font-bold uppercase tracking-wider text-orange-300"><i class="fa-regular fa-clock mr-1"></i> BSE Odisha Board Exam Countdown</div>
-                        <div class="grid grid-cols-4 gap-2 text-center" id="countdownTimer">
-                            <div class="bg-slate-900/60 p-2 rounded-xl">
-                                <span class="block text-xl font-extrabold text-white" id="daysCount">184</span>
-                                <span class="text-[10px] text-slate-300 uppercase">Days</span>
-                            </div>
-                            <div class="bg-slate-900/60 p-2 rounded-xl">
-                                <span class="block text-xl font-extrabold text-white" id="hoursCount">14</span>
-                                <span class="text-[10px] text-slate-300 uppercase">Hours</span>
-                            </div>
-                            <div class="bg-slate-900/60 p-2 rounded-xl">
-                                <span class="block text-xl font-extrabold text-white" id="minsCount">32</span>
-                                <span class="text-[10px] text-slate-300 uppercase">Mins</span>
-                            </div>
-                            <div class="bg-slate-900/60 p-2 rounded-xl">
-                                <span class="block text-xl font-extrabold text-white" id="secsCount">45</span>
-                                <span class="text-[10px] text-slate-300 uppercase">Secs</span>
-                            </div>
-                        </div>
-                        <p class="text-[11px] text-slate-300 italic">Target: Annual High School Certificate Examination</p>
-                    </div>
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 py-8 border-t border-slate-800 text-xs">
+        <!-- ... existing footer content ... -->
+    </footer>
+
+    <script>
+        // Ensure all interactive functions are attached to window for inline onclick handlers
+
+        window.switchTab = function(tabId) {
+            // Hide all tab contents
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.add('hidden'));
+
+            // Show target tab
+            const target = document.getElementById('tab-' + tabId);
+            if (target) {
+                target.classList.remove('hidden');
+            }
+
+            // Update active state in nav buttons
+            const navButtons = document.querySelectorAll('.nav-tab');
+            navButtons.forEach(btn => {
+                btn.classList.remove('bg-brand-blue', 'text-white', 'active-tab');
+                btn.classList.add('hover:bg-slate-100', 'dark:hover:bg-slate-800');
+            });
+
+            // Find matching button and highlight
+            const activeNav = document.querySelector(`.nav-tab[onclick*="'${tabId}'"]`);
+            if (activeNav) {
+                activeNav.classList.add('bg-brand-blue', 'text-white', 'active-tab');
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.selectGlobalClass = function(classNum) {
+            window.currentClass = classNum;
+            
+            // Update class button styles
+            const btn9 = document.getElementById('class9Btn');
+            const btn10 = document.getElementById('class10Btn');
+            const sub9 = document.getElementById('subClass9');
+            const sub10 = document.getElementById('subClass10');
+
+            if (classNum === '9') {
+                if(btn9) btn9.className = 'px-2.5 py-1 text-xs font-bold rounded-lg transition-all bg-brand-blue text-white shadow-sm';
+                if(btn10) btn10.className = 'px-2.5 py-1 text-xs font-bold rounded-lg transition-all text-slate-600 dark:text-slate-300 hover:text-brand-blue';
+                if(sub9) sub9.className = 'px-4 py-1.5 text-xs font-bold rounded-lg transition bg-brand-blue text-white';
+                if(sub10) sub10.className = 'px-4 py-1.5 text-xs font-bold rounded-lg transition text-slate-700 dark:text-slate-300';
+            } else {
+                if(btn10) btn10.className = 'px-2.5 py-1 text-xs font-bold rounded-lg transition-all bg-brand-blue text-white shadow-sm';
+                if(btn9) btn9.className = 'px-2.5 py-1 text-xs font-bold rounded-lg transition-all text-slate-600 dark:text-slate-300 hover:text-brand-blue';
+                if(sub10) sub10.className = 'px-4 py-1.5 text-xs font-bold rounded-lg transition bg-brand-blue text-white';
+                if(sub9) sub9.className = 'px-4 py-1.5 text-xs font-bold rounded-lg transition text-slate-700 dark:text-slate-300';
+            }
+
+            // Update all labels
+            document.querySelectorAll('.current-class-display').forEach(el => el.innerText = classNum);
+            const heroLabel = document.getElementById('heroClassLabel');
+            if (heroLabel) heroLabel.innerText = `Class ${classNum}`;
+
+            window.showToast(`Switched to Class ${classNum} Syllabus`, 'info');
+            if (typeof renderSubjectGrid === 'function') renderSubjectGrid();
+        };
+
+        window.toggleDarkMode = function() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            const themeIcon = document.getElementById('themeIcon');
+            if (themeIcon) {
+                themeIcon.className = isDark ? 'fa-solid fa-sun text-amber-400' : 'fa-solid fa-moon';
+            }
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            window.showToast(isDark ? 'Dark mode activated' : 'Light mode activated', 'info');
+        };
+
+        window.showToast = function(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            const colors = {
+                success: 'bg-green-600 text-white',
+                error: 'bg-red-600 text-white',
+                info: 'bg-brand-blue text-white'
+            };
+
+            toast.className = `${colors[type] || colors.info} px-4 py-2.5 rounded-xl shadow-lg text-xs font-semibold flex items-center gap-2 transition-all transform translate-y-2 pointer-events-auto`;
+            toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i> <span>${message}</span>`;
+
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-[-10px]');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        };
+
+        window.handleGlobalSearch = function(query) {
+            const dropdown = document.getElementById('searchDropdown');
+            if (!dropdown) return;
+
+            if (!query.trim()) {
+                dropdown.classList.add('hidden');
+                return;
+            }
+
+            dropdown.classList.remove('hidden');
+            dropdown.innerHTML = `
+                <div class="p-2 text-xs font-semibold text-slate-400 border-b border-slate-100 dark:border-slate-700">Search Results for "${query}"</div>
+                <div onclick="switchTab('chapter-view'); document.getElementById('searchDropdown').classList.add('hidden');" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg cursor-pointer text-xs">
+                    <span class="font-bold text-brand-blue">Science Ch 1:</span> Chemical Reactions & Equations
                 </div>
-            </div>
-
-            <!-- Quick Stats & Daily Motivational Quote -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="p-4 rounded-2xl bg-white dark:bg-brand-cardDark border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/40 text-brand-blue dark:text-blue-400 flex items-center justify-center text-xl">
-                        <i class="fa-solid fa-quote-left"></i>
-                    </div>
-                    <div>
-                        <div class="text-xs text-brand-orange font-bold uppercase">Daily Motivation</div>
-                        <p class="text-xs font-medium italic text-slate-700 dark:text-slate-300">"Success isn't always about greatness. It's about consistency. Hard work leads to success."</p>
-                    </div>
+                <div onclick="switchTab('chapter-view'); document.getElementById('searchDropdown').classList.add('hidden');" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg cursor-pointer text-xs">
+                    <span class="font-bold text-brand-blue">Math Ch 1:</span> Real Numbers & Quadratic Equations
                 </div>
+            `;
+        };
 
-                <div class="p-4 rounded-2xl bg-white dark:bg-brand-cardDark border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-950/40 text-brand-orange flex items-center justify-center text-xl">
-                            <i class="fa-solid fa-fire"></i>
-                        </div>
-                        <div>
-                            <div class="text-xs text-slate-500 dark:text-slate-400 font-medium">Study Streak</div>
-                            <div class="text-lg font-bold text-slate-800 dark:text-white">7 Days Active</div>
-                        </div>
-                    </div>
-                    <span class="text-xs bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400 font-bold px-2.5 py-1 rounded-full">+200 XP</span>
-                </div>
+        window.startSpecificTest = function(testId) {
+            window.switchTab('mock-test');
+            window.showToast(`Starting Practice Test: ${testId}`, 'success');
+        };
 
-                <div class="p-4 rounded-2xl bg-white dark:bg-brand-cardDark border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xl">
-                            <i class="fa-solid fa-chart-line"></i>
-                        </div>
-                        <div>
-                            <div class="text-xs text-slate-500 dark:text-slate-400 font-medium">Class Ranking</div>
-                            <div class="text-lg font-bold text-slate-800 dark:text-white">Rank #4 / 1,240</div>
-                        </div>
-                    </div>
-                    <button onclick="switchTab('profile')" class="text-xs text-brand-blue dark:text-blue-400 font-bold hover:underline">View Badge</button>
-                </div>
-            </div>
+        window.bookmarkChapter = function() {
+            window.showToast('Chapter bookmarked successfully!', 'success');
+        };
 
-            <!-- Featured Subjects Grid -->
-            <div class="space-y-4">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h3 class="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-                            Explore <span class="current-class-display text-brand-blue dark:text-blue-400">Class 10</span> Subjects
-                        </h3>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">Strictly following the latest BSE Odisha Board Syllabus</p>
-                    </div>
-                    <button onclick="switchTab('subjects')" class="text-xs font-bold text-brand-blue dark:text-blue-400 hover:underline flex items-center gap-1">
-                        View All Subjects <i class="fa-solid fa-arrow-right"></i>
-                    </button>
-                </div>
+        window.printChapter = function() {
+            window.print();
+        };
 
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4" id="homeSubjectGrid">
-                    <!-- Dynamic rendering via JS -->
-                </div>
-            </div>
+        window.downloadResource = function(title, type) {
+            window.showToast(`Downloading ${title} (${type.toUpperCase()})...`, 'success');
+        };
 
-            <!-- Today's Mock Test & Most Important Questions Preview -->
-            <div class="grid lg:grid-cols-12 gap-6">
-                <!-- Today's Mock Test Featured Card -->
-                <div class="lg:col-span-7 bg-white dark:bg-brand-cardDark rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-                    <div class="flex items-center justify-between">
-                        <span class="px-3 py-1 bg-orange-100 text-brand-orange dark:bg-orange-950/60 dark:text-orange-400 font-bold text-xs rounded-full uppercase flex items-center gap-1.5">
-                            <i class="fa-solid fa-bolt"></i> Daily Live Test
-                        </span>
-                        <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">BSE Pattern • 15 Mins</span>
-                    </div>
+        window.filterDownloads = function(category) {
+            window.showToast(`Filtered download resources by: ${category}`, 'info');
+        };
 
-                    <div>
-                        <h4 class="text-lg font-extrabold text-slate-900 dark:text-white">Science Chapter 1: Chemical Reactions & Equations</h4>
-                        <p class="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                             includes MCQs, Assertion-Reason questions, and Odia translations for complex terms.
-                        </p>
-                    </div>
-
-                    <div class="grid grid-cols-3 gap-2 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl text-center text-xs">
-                        <div>
-                            <span class="text-slate-400 block">Questions</span>
-                            <span class="font-bold text-slate-800 dark:text-slate-200">10 MCQs</span>
-                        </div>
-                        <div>
-                            <span class="text-slate-400 block">Max Marks</span>
-                            <span class="font-bold text-slate-800 dark:text-slate-200">20 Marks</span>
-                        </div>
-                        <div>
-                            <span class="text-slate-400 block">Attempts Today</span>
-                            <span class="font-bold text-brand-blue dark:text-blue-400">1,840 Students</span>
-                        </div>
-                    </div>
-
-                    <div class="flex gap-3">
-                        <button onclick="startSpecificTest('science_ch1')" class="flex-1 py-2.5 rounded-xl bg-brand-blue hover:bg-blue-800 text-white font-bold text-xs shadow transition text-center">
-                            Start Practice Test Now
-                        </button>
-                        <button onclick="switchTab('mock-test')" class="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs hover:bg-slate-100 dark:hover:bg-slate-800">
-                            More Tests
-                        </button>
-                    </div>
-                </div>
+        // Initialize state on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+                const themeIcon = document.getElementById('themeIcon');
+                if (themeIcon) themeIcon.className = 'fa-solid fa-sun text-amber-400';
+            }
+            window.currentClass = '10';
+        });
+    </script>
 
                 <!-- Recent Uploads & Notes -->
                 <div class="lg:col-span-5 bg-white dark:bg-brand-cardDark rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
@@ -321,45 +322,8 @@
                         <span class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded">Updated Today</span>
                     </div>
 
-                    <div class="space-y-3">
-                        <div onclick="openChapter('science', 'ch1')" class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 hover:bg-blue-50 dark:hover:bg-slate-800 cursor-pointer transition flex items-center justify-between group">
-                            <div class="flex items-center gap-3">
-                                <div class="w-9 h-9 rounded-lg bg-blue-100 dark:bg-blue-900/50 text-brand-blue dark:text-blue-400 flex items-center justify-center font-bold text-xs">
-                                    SCI
-                                </div>
-                                <div>
-                                    <h5 class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-brand-blue">Chemical Reactions & Formulae</h5>
-                                    <span class="text-[10px] text-slate-400">Class 10 • Quick Revision + Odia Notes</span>
-                                </div>
-                            </div>
-                            <i class="fa-solid fa-chevron-right text-xs text-slate-400 group-hover:text-brand-blue"></i>
-                        </div>
-
-                        <div onclick="openChapter('math', 'ch1')" class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 hover:bg-blue-50 dark:hover:bg-slate-800 cursor-pointer transition flex items-center justify-between group">
-                            <div class="flex items-center gap-3">
-                                <div class="w-9 h-9 rounded-lg bg-orange-100 dark:bg-orange-950/50 text-brand-orange flex items-center justify-center font-bold text-xs">
-                                    MTH
-                                </div>
-                                <div>
-                                    <h5 class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-brand-blue">Quadratic Equations (ଦ୍ୱିଘାତ ସମୀକରଣ)</h5>
-                                    <span class="text-[10px] text-slate-400">Class 10 • Short Tricks & Solved Examples</span>
-                                </div>
-                            </div>
-                            <i class="fa-solid fa-chevron-right text-xs text-slate-400 group-hover:text-brand-blue"></i>
-                        </div>
-
-                        <div onclick="openChapter('english', 'ch1')" class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 hover:bg-blue-50 dark:hover:bg-slate-800 cursor-pointer transition flex items-center justify-between group">
-                            <div class="flex items-center gap-3">
-                                <div class="w-9 h-9 rounded-lg bg-purple-100 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold text-xs">
-                                    ENG
-                                </div>
-                                <div>
-                                    <h5 class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-brand-blue">A Letter to God (Grammar Rules)</h5>
-                                    <span class="text-[10px] text-slate-400">Class 10 • Vocabulary & Odia Meaning</span>
-                                </div>
-                            </div>
-                            <i class="fa-solid fa-chevron-right text-xs text-slate-400 group-hover:text-brand-blue"></i>
-                        </div>
+                    <div class="space-y-3" id="homeRecentNotesList">
+                        <!-- Dynamic Notes Feed -->
                     </div>
                 </div>
             </div>
@@ -504,1225 +468,4 @@
                 </p>
 
                 <!-- Chapter Progress Bar -->
-                <div class="pt-2 border-t border-slate-700/60 flex items-center justify-between text-xs">
-                    <span class="text-slate-400">Chapter Reading Progress:</span>
-                    <div class="w-1/2 bg-slate-700 rounded-full h-2 overflow-hidden mx-3">
-                        <div class="bg-brand-orange h-2 rounded-full w-3/4"></div>
-                    </div>
-                    <span class="font-bold text-orange-400">75% Completed</span>
-                </div>
-            </div>
-
-            <!-- Chapter Navigation Sub-Tabs -->
-            <div class="flex items-center space-x-2 overflow-x-auto custom-scrollbar pb-2 border-b border-slate-200 dark:border-slate-800">
-                <button onclick="switchChapterTab('notes')" class="ch-tab px-4 py-2 rounded-xl text-xs font-bold bg-brand-blue text-white whitespace-nowrap shadow-sm"><i class="fa-solid fa-file-alt mr-1.5"></i> Comprehensive Notes</button>
-                <button onclick="switchChapterTab('odia-glossary')" class="ch-tab px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 whitespace-nowrap"><i class="fa-solid fa-language mr-1.5"></i> Odia Meanings Glossary</button>
-                <button onclick="switchChapterTab('formulas')" class="ch-tab px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 whitespace-nowrap"><i class="fa-solid fa-square-root-variable mr-1.5"></i> Formula Sheet & Laws</button>
-                <button onclick="switchChapterTab('mindmap')" class="ch-tab px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 whitespace-nowrap"><i class="fa-solid fa-sitemap mr-1.5"></i> Mind Map & Flowcharts</button>
-                <button onclick="switchChapterTab('board-tips')" class="ch-tab px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 whitespace-nowrap"><i class="fa-solid fa-lightbulb mr-1.5 text-amber-500"></i> Board Tips & Common Mistakes</button>
-            </div>
-
-            <!-- Chapter Sub-Tab Content Sections -->
-            <div id="ch-content-container" class="bg-white dark:bg-brand-cardDark rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm min-h-[400px]">
-                <!-- Dynamic HTML generated via JS dependent on tab -->
-            </div>
-        </section>
-
-        <!-- TAB 4: SPECIAL MOCK TEST SYSTEM -->
-        <section id="tab-mock-test" class="tab-content space-y-6 hidden">
-            <!-- Header Banner -->
-            <div class="bg-gradient-to-r from-orange-500 via-brand-orange to-red-600 text-white rounded-3xl p-6 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
-                <div class="space-y-2 max-w-xl">
-                    <span class="px-3 py-1 bg-black/20 rounded-full text-xs font-bold tracking-wide uppercase">BSE Odisha Pattern Evaluation Engine</span>
-                    <h2 class="text-2xl md:text-3xl font-black">Advanced Real-Time Mock Test Portal</h2>
-                    <p class="text-slate-100 text-xs md:text-sm">
-                        Timed tests, instant score analysis, Odia explanations, weak topic identification, and BSE State rank tracking.
-                    </p>
-                </div>
-                <div class="flex items-center gap-3">
-                    <div class="text-center bg-white/10 backdrop-blur-md p-3 rounded-2xl border border-white/20">
-                        <span class="block text-2xl font-black">100%</span>
-                        <span class="text-[10px] text-orange-100">BSE Pattern</span>
-                    </div>
-                    <div class="text-center bg-white/10 backdrop-blur-md p-3 rounded-2xl border border-white/20">
-                        <span class="block text-2xl font-black">Instant</span>
-                        <span class="text-[10px] text-orange-100">Auto Evaluation</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Test Selection Grid vs Live Test Interface Switcher -->
-            <div id="testSelectionHub" class="space-y-6">
-                <!-- Test Filters -->
-                <div class="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-brand-cardDark p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-bold text-slate-500">Filter Tests:</span>
-                        <select id="mockTestCategory" onchange="filterMockTests()" class="text-xs font-semibold px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
-                            <option value="all">All Test Types</option>
-                            <option value="chapter">Chapter Wise Test</option>
-                            <option value="unit">Unit Test</option>
-                            <option value="half_yearly">Half Yearly Mock</option>
-                            <option value="full">Full Syllabus Model Exam</option>
-                        </select>
-                    </div>
-
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-bold text-slate-500">Subject:</span>
-                        <select id="mockTestSubject" onchange="filterMockTests()" class="text-xs font-semibold px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
-                            <option value="all">All Subjects</option>
-                            <option value="science">Science (ବିଜ୍ଞାନ)</option>
-                            <option value="math">Mathematics (ଗଣିତ)</option>
-                            <option value="english">English</option>
-                            <option value="social">Social Science</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Test Cards Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="mockTestCardsGrid">
-                    <!-- Dynamic rendering via JS -->
-                </div>
-            </div>
-
-            <!-- LIVE TEST ENGINE MODAL / INTERFACE (Hidden by default) -->
-            <div id="liveTestContainer" class="hidden bg-white dark:bg-brand-cardDark rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-6">
-                <!-- Test Top Bar -->
-                <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
-                    <div>
-                        <span id="activeTestCategoryTag" class="text-[10px] font-bold bg-brand-orange text-white px-2.5 py-0.5 rounded-full uppercase">Chapter Test</span>
-                        <h3 id="activeTestTitle" class="text-lg font-black text-slate-900 dark:text-white mt-1">Science Chapter 1 Mock Test</h3>
-                    </div>
-
-                    <div class="flex items-center space-x-4">
-                        <!-- Live Timer -->
-                        <div class="bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800/60 px-4 py-2 rounded-xl text-red-600 dark:text-red-400 font-mono font-bold text-sm flex items-center gap-2">
-                            <i class="fa-regular fa-clock animate-pulse"></i>
-                            <span id="testTimerDisplay">15:00</span>
-                        </div>
-                        <button onclick="confirmSubmitTest()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-bold text-xs rounded-xl shadow transition">
-                            Submit Test
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Test Progress Indicator -->
-                <div class="flex items-center justify-between text-xs text-slate-500">
-                    <span>Question <strong id="currentQNum">1</strong> of <strong id="totalQNum">5</strong></span>
-                    <span>Class 10 BSE Pattern</span>
-                </div>
-
-                <!-- Active Question Box -->
-                <div class="p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 space-y-4">
-                    <h4 id="questionText" class="text-base md:text-lg font-bold text-slate-900 dark:text-white">
-                        1. What type of reaction takes place when magnesium ribbon burns in oxygen? (ମ୍ୟାଗ୍ନେସିଅମ୍ ଫିତା ବାୟୁରେ ଜଳିଲେ କେଉଁ ପ୍ରକାରର ପ୍ରତିକ୍ରିୟା ଘଟେ?)
-                    </h4>
-
-                    <!-- Options Grid -->
-                    <div id="optionsGrid" class="space-y-3 pt-2">
-                        <!-- Dynamic Options via JS -->
-                    </div>
-                </div>
-
-                <!-- Question Navigation & Action Footer -->
-                <div class="flex items-center justify-between pt-2">
-                    <button id="prevQBtn" onclick="navigateQuestion(-1)" class="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800">
-                        <i class="fa-solid fa-arrow-left mr-1"></i> Previous
-                    </button>
-                    <div class="flex items-center space-x-2" id="questionPillsContainer">
-                        <!-- Dynamic Question Pills -->
-                    </div>
-                    <button id="nextQBtn" onclick="navigateQuestion(1)" class="px-4 py-2 rounded-xl bg-brand-blue hover:bg-blue-800 text-white font-bold text-xs">
-                        Next <i class="fa-solid fa-arrow-right ml-1"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- TEST RESULT & PERFORMANCE ANALYTICS (Hidden by default) -->
-            <div id="testResultContainer" class="hidden bg-white dark:bg-brand-cardDark rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-6">
-                <div class="text-center space-y-2 border-b border-slate-200 dark:border-slate-800 pb-6">
-                    <div class="inline-flex p-3 rounded-full bg-green-100 dark:bg-green-950 text-green-600 dark:text-green-400 text-3xl mb-2">
-                        <i class="fa-solid fa-award"></i>
-                    </div>
-                    <h3 class="text-2xl font-black text-slate-900 dark:text-white">Test Completed Successfully!</h3>
-                    <p class="text-xs text-slate-500">Here is your detailed BSE Odisha evaluation & weak topic report.</p>
-                </div>
-
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div class="p-4 rounded-2xl bg-blue-50 dark:bg-slate-800 text-center">
-                        <span class="text-xs text-slate-500 block">Total Score</span>
-                        <span class="text-2xl font-black text-brand-blue dark:text-blue-400" id="resScore">8/10</span>
-                    </div>
-                    <div class="p-4 rounded-2xl bg-green-50 dark:bg-slate-800 text-center">
-                        <span class="text-xs text-slate-500 block">Accuracy Rate</span>
-                        <span class="text-2xl font-black text-green-600 dark:text-green-400" id="resAccuracy">80%</span>
-                    </div>
-                    <div class="p-4 rounded-2xl bg-orange-50 dark:bg-slate-800 text-center">
-                        <span class="text-xs text-slate-500 block">Time Spent</span>
-                        <span class="text-2xl font-black text-brand-orange" id="resTime">04:20</span>
-                    </div>
-                    <div class="p-4 rounded-2xl bg-purple-50 dark:bg-slate-800 text-center">
-                        <span class="text-xs text-slate-500 block">Odisha State Rank</span>
-                        <span class="text-2xl font-black text-purple-600 dark:text-purple-400" id="resRank">#12</span>
-                    </div>
-                </div>
-
-                <!-- Answer Review with Explanations -->
-                <div class="space-y-4">
-                    <h4 class="font-extrabold text-slate-900 dark:text-white text-base">Question Breakdown & Odia Explanations</h4>
-                    <div id="reviewQuestionsList" class="space-y-4">
-                        <!-- Dynamic Review Items -->
-                    </div>
-                </div>
-
-                <div class="flex justify-center gap-4 pt-4">
-                    <button onclick="closeTestResult()" class="px-6 py-2.5 rounded-xl bg-brand-blue hover:bg-blue-800 text-white font-bold text-xs shadow">
-                        Back to Test Portal
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <!-- TAB 5: EXTRA LEARNING TOOLS PAGE -->
-        <section id="tab-tools" class="tab-content space-y-6 hidden">
-            <div class="border-b border-slate-200 dark:border-slate-800 pb-4">
-                <h2 class="text-2xl font-black text-slate-900 dark:text-white">Student Productivity & Learning Tools</h2>
-                <p class="text-xs text-slate-500">Pomodoro timers, daily goals, formula widgets, and custom revision planners.</p>
-            </div>
-
-            <div class="grid md:grid-cols-12 gap-6">
-                <!-- Pomodoro Study Timer (Left Column) -->
-                <div class="md:col-span-6 bg-white dark:bg-brand-cardDark rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm text-center space-y-6">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-brand-orange uppercase flex items-center gap-1">
-                            <i class="fa-solid fa-stopwatch"></i> Pomodoro Focus Timer
-                        </span>
-                        <span class="text-xs text-slate-400">25 Min Study Session</span>
-                    </div>
-
-                    <div class="w-48 h-48 mx-auto rounded-full border-8 border-brand-blue/20 dark:border-blue-900/40 flex items-center justify-center relative">
-                        <div class="text-center">
-                            <span id="pomoTimeDisplay" class="text-4xl font-black text-slate-900 dark:text-white block font-mono">25:00</span>
-                            <span id="pomoStatus" class="text-xs font-bold text-brand-orange uppercase">Ready to Focus</span>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-center gap-3">
-                        <button id="pomoStartBtn" onclick="togglePomodoro()" class="px-6 py-2.5 rounded-xl bg-brand-blue hover:bg-blue-800 text-white font-bold text-xs shadow flex items-center gap-2">
-                            <i class="fa-solid fa-play"></i> Start Session
-                        </button>
-                        <button onclick="resetPomodoro()" class="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs">
-                            <i class="fa-solid fa-rotate-right"></i> Reset
-                        </button>
-                    </div>
-
-                    <div class="text-xs text-slate-500 italic bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl">
-                        💡 Tip: Study focused for 25 minutes, then take a 5-minute break to retain formula memory better.
-                    </div>
-                </div>
-
-                <!-- Daily Study Planner & Goals Checklist (Right Column) -->
-                <div class="md:col-span-6 bg-white dark:bg-brand-cardDark rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-                    <div class="flex items-center justify-between">
-                        <h3 class="font-extrabold text-slate-900 dark:text-white text-base flex items-center gap-2">
-                            <i class="fa-solid fa-list-check text-brand-blue"></i> Daily Goal Planner
-                        </h3>
-                        <span class="text-xs font-bold text-green-600 bg-green-50 dark:bg-green-950 px-2 py-0.5 rounded" id="goalsCompletedText">1/3 Done</span>
-                    </div>
-
-                    <div class="space-y-3" id="goalsListContainer">
-                        <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                            <label class="flex items-center gap-3 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200">
-                                <input type="checkbox" checked onchange="updateGoalsCount()" class="w-4 h-4 text-brand-blue rounded focus:ring-brand-blue">
-                                <span>Read Science Chapter 1 Chemical Reactions (15 min)</span>
-                            </label>
-                            <span class="text-[10px] bg-blue-100 text-brand-blue font-bold px-2 py-0.5 rounded">SCI</span>
-                        </div>
-
-                        <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                            <label class="flex items-center gap-3 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200">
-                                <input type="checkbox" onchange="updateGoalsCount()" class="w-4 h-4 text-brand-blue rounded focus:ring-brand-blue">
-                                <span>Solve 10 Math Quadratic Equation MCQs</span>
-                            </label>
-                            <span class="text-[10px] bg-orange-100 text-brand-orange font-bold px-2 py-0.5 rounded">MATH</span>
-                        </div>
-
-                        <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                            <label class="flex items-center gap-3 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200">
-                                <input type="checkbox" onchange="updateGoalsCount()" class="w-4 h-4 text-brand-blue rounded focus:ring-brand-blue">
-                                <span>Learn 5 English Difficult Odia Word Meanings</span>
-                            </label>
-                            <span class="text-[10px] bg-purple-100 text-purple-600 font-bold px-2 py-0.5 rounded">ENG</span>
-                        </div>
-                    </div>
-
-                    <!-- Add New Goal Input -->
-                    <div class="flex gap-2 pt-2">
-                        <input type="text" id="newGoalInput" placeholder="Add custom study target..." class="flex-1 px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:outline-none">
-                        <button onclick="addCustomGoal()" class="px-4 py-2 bg-brand-orange hover:bg-brand-darkOrange text-white font-bold text-xs rounded-xl shadow">
-                            Add Goal
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Daily Widgets Row (Word, Formula, Question of the Day) -->
-            <div class="grid md:grid-cols-3 gap-6">
-                <div class="p-5 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-800/60 border border-blue-200 dark:border-slate-700 space-y-2">
-                    <span class="text-[10px] uppercase font-bold text-brand-blue">Word of the Day</span>
-                    <h4 class="text-lg font-black text-slate-900 dark:text-white">Precipitate</h4>
-                    <p class="text-xs text-slate-600 dark:text-slate-300 font-semibold">Odia: ଅବକ୍ଷେପ (Abakskhepa)</p>
-                    <p class="text-[11px] text-slate-500 italic">Meaning: An insoluble solid that emerges from a liquid solution during a chemical reaction.</p>
-                </div>
-
-                <div class="p-5 rounded-2xl bg-gradient-to-br from-orange-50 to-amber-50 dark:from-slate-800 dark:to-slate-800/60 border border-orange-200 dark:border-slate-700 space-y-2">
-                    <span class="text-[10px] uppercase font-bold text-brand-orange">Formula of the Day</span>
-                    <h4 class="text-lg font-black text-slate-900 dark:text-white font-mono">x = (-b ± √(b² - 4ac)) / 2a</h4>
-                    <p class="text-xs text-slate-600 dark:text-slate-300 font-semibold">Quadratic Formula (ଦ୍ୱିଘାତ ସୂତ୍ର)</p>
-                    <p class="text-[11px] text-slate-500 italic">Used to find the roots of any quadratic equation ax² + bx + c = 0.</p>
-                </div>
-
-                <div class="p-5 rounded-2xl bg-gradient-to-br from-emerald-50 to-green-50 dark:from-slate-800 dark:to-slate-800/60 border border-green-200 dark:border-slate-700 space-y-2">
-                    <span class="text-[10px] uppercase font-bold text-green-600">Question of the Day</span>
-                    <h4 class="text-xs font-bold text-slate-900 dark:text-white">Why is respiration considered an exothermic reaction?</h4>
-                    <button onclick="alert('Explanation: Respiration involves the oxidation of glucose in body cells which releases energy in the form of ATP, hence exothermic (ତାପଉତ୍ପାଦୀ ପ୍ରତିକ୍ରିୟା).')" class="text-xs text-brand-blue font-bold hover:underline">
-                        Reveal Odia Explanation <i class="fa-solid fa-eye ml-1"></i>
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <!-- TAB 6: DOWNLOAD CENTER -->
-        <section id="tab-downloads" class="tab-content space-y-6 hidden">
-            <div class="border-b border-slate-200 dark:border-slate-800 pb-4">
-                <h2 class="text-2xl font-black text-slate-900 dark:text-white">Printable Notes & Question Bank Center</h2>
-                <p class="text-xs text-slate-500">Download BSE Odisha compliant high-quality PDF notes, mind maps, formula handbooks, and answer keys.</p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="downloadFilesGrid">
-                <!-- Dynamic download items rendered via JS -->
-            </div>
-        </section>
-
-        <!-- TAB 7: ADMIN PANEL SIMULATION -->
-        <section id="tab-admin" class="tab-content space-y-6 hidden">
-            <div class="bg-slate-900 text-white p-6 rounded-3xl flex flex-wrap items-center justify-between gap-4 shadow-xl">
-                <div>
-                    <span class="px-2.5 py-0.5 bg-red-600 text-white text-[10px] font-bold rounded uppercase">Admin Dashboard</span>
-                    <h2 class="text-2xl font-black mt-1">SIKSHYA SATHI Management Portal</h2>
-                    <p class="text-xs text-slate-400">Upload notes, create BSE pattern mock tests, and manage state analytics.</p>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <button onclick="showUploadModal()" class="px-4 py-2 bg-brand-orange hover:bg-brand-darkOrange text-white font-bold text-xs rounded-xl shadow">
-                        <i class="fa-solid fa-plus mr-1"></i> Upload New Note / PDF
-                    </button>
-                </div>
-            </div>
-
-            <!-- Admin Stats Cards -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="p-4 rounded-2xl bg-white dark:bg-brand-cardDark border border-slate-200 dark:border-slate-800">
-                    <span class="text-xs text-slate-500">Total Active Students</span>
-                    <span class="text-2xl font-black text-slate-900 dark:text-white block">14,280</span>
-                    <span class="text-[10px] text-green-600 font-bold">+12% this week</span>
-                </div>
-                <div class="p-4 rounded-2xl bg-white dark:bg-brand-cardDark border border-slate-200 dark:border-slate-800">
-                    <span class="text-xs text-slate-500">Total Notes Uploaded</span>
-                    <span class="text-2xl font-black text-brand-blue dark:text-blue-400 block">340 PDFs</span>
-                    <span class="text-[10px] text-slate-400">Class 9 & Class 10</span>
-                </div>
-                <div class="p-4 rounded-2xl bg-white dark:bg-brand-cardDark border border-slate-200 dark:border-slate-800">
-                    <span class="text-xs text-slate-500">Mock Tests Conducted</span>
-                    <span class="text-2xl font-black text-brand-orange block">1,890</span>
-                    <span class="text-[10px] text-slate-400">Auto Evaluated</span>
-                </div>
-                <div class="p-4 rounded-2xl bg-white dark:bg-brand-cardDark border border-slate-200 dark:border-slate-800">
-                    <span class="text-xs text-slate-500">System Backup Status</span>
-                    <span class="text-2xl font-black text-green-600 block">Active</span>
-                    <span class="text-[10px] text-slate-400">Cloud Synced 2m ago</span>
-                </div>
-            </div>
-
-            <!-- Content Upload Form Area -->
-            <div class="bg-white dark:bg-brand-cardDark p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-                <h3 class="font-bold text-slate-900 dark:text-white text-base">Quick Content Uploader</h3>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <label class="text-xs font-semibold text-slate-500 block mb-1">Target Class</label>
-                        <select id="adminClass" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-semibold">
-                            <option value="10">Class 10 (BSE Odisha)</option>
-                            <option value="9">Class 9 (BSE Odisha)</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="text-xs font-semibold text-slate-500 block mb-1">Subject</label>
-                        <select id="adminSubject" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-semibold">
-                            <option value="science">Science</option>
-                            <option value="math">Mathematics</option>
-                            <option value="english">English</option>
-                            <option value="history">History</option>
-                            <option value="geography">Geography</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="text-xs font-semibold text-slate-500 block mb-1">Document Title</label>
-                        <input type="text" id="adminDocTitle" placeholder="e.g. Chapter 1 Quick Revision Sheet" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="text-xs font-semibold text-slate-500 block mb-1">Odia Vocabulary & Notes Summary</label>
-                    <textarea id="adminDocSummary" rows="3" placeholder="Enter key points and Odia word meanings here..." class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs"></textarea>
-                </div>
-
-                <div class="flex justify-end gap-3">
-                    <button onclick="simulateUpload()" class="px-6 py-2.5 bg-brand-blue hover:bg-blue-800 text-white font-bold text-xs rounded-xl shadow">
-                        Publish Content Live
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <!-- TAB 8: STUDENT PROFILE -->
-        <section id="tab-profile" class="tab-content space-y-6 hidden">
-            <div class="bg-white dark:bg-brand-cardDark p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center gap-6">
-                <img src="https://placehold.co/120x120/1e40af/ffffff?text=STUDENT" alt="Avatar" class="w-24 h-24 rounded-full border-4 border-brand-orange shadow-md">
-                <div class="space-y-1 text-center md:text-left flex-1">
-                    <div class="flex flex-wrap items-center justify-center md:justify-start gap-2">
-                        <h2 class="text-2xl font-extrabold text-slate-900 dark:text-white">Soumya Ranjan Dash</h2>
-                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-brand-blue dark:bg-blue-950">Class 10 Student</span>
-                    </div>
-                    <p class="text-xs text-slate-500">Government High School, Cuttack • BSE Odisha Board 2026 Batch</p>
-                    <div class="flex flex-wrap justify-center md:justify-start gap-3 pt-2 text-xs font-semibold">
-                        <span class="text-brand-orange"><i class="fa-solid fa-fire mr-1"></i> 7 Day Streak</span>
-                        <span class="text-green-600"><i class="fa-solid fa-trophy mr-1"></i> 2,980 Total XP</span>
-                        <span class="text-purple-600"><i class="fa-solid fa-medal mr-1"></i> 14 Badges Earned</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Analytics Chart -->
-            <div class="bg-white dark:bg-brand-cardDark p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-                <h3 class="font-extrabold text-slate-900 dark:text-white text-base">Weekly Mock Test Performance Trend</h3>
-                <div class="h-64 relative">
-                    <canvas id="performanceChart"></canvas>
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- Footer -->
-    <footer class="bg-slate-900 text-white border-t border-slate-800 py-10 mt-12">
-        <div class="container mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div class="space-y-3">
-                <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-brand-blue to-brand-orange text-white flex items-center justify-center font-black text-lg">S</div>
-                    <span class="text-lg font-black text-white">SIKSHYA SATHI</span>
-                </div>
-                <p class="text-xs text-slate-400">
-                    The #1 dedicated digital learning platform for BSE Odisha Class 9 and Class 10 students. Learn smart and score higher with exam-focused notes and tests.
-                </p>
-            </div>
-
-            <div>
-                <h4 class="text-xs font-bold text-brand-orange uppercase mb-3">Quick Links</h4>
-                <ul class="space-y-2 text-xs text-slate-300">
-                    <li><a href="#home" onclick="switchTab('home')" class="hover:underline">Home Dashboard</a></li>
-                    <li><a href="#subjects" onclick="switchTab('subjects')" class="hover:underline">Class 10 Subjects</a></li>
-                    <li><a href="#mock-test" onclick="switchTab('mock-test')" class="hover:underline">Mock Test Engine</a></li>
-                    <li><a href="#downloads" onclick="switchTab('downloads')" class="hover:underline">Download Question Bank</a></li>
-                </ul>
-            </div>
-
-            <div>
-                <h4 class="text-xs font-bold text-brand-orange uppercase mb-3">Subjects (BSE Pattern)</h4>
-                <ul class="space-y-2 text-xs text-slate-300">
-                    <li><a href="#chapter-view" onclick="openChapter('science','ch1')" class="hover:underline">Physical & Life Science</a></li>
-                    <li><a href="#chapter-view" onclick="openChapter('math','ch1')" class="hover:underline">Mathematics & Geometry</a></li>
-                    <li><a href="#chapter-view" onclick="openChapter('english','ch1')" class="hover:underline">English Literature & Grammar</a></li>
-                    <li><a href="#chapter-view" onclick="openChapter('history','ch1')" class="hover:underline">History & Political Science</a></li>
-                </ul>
-            </div>
-
-            <div>
-                <h4 class="text-xs font-bold text-brand-orange uppercase mb-3">Support & Feedback</h4>
-                <p class="text-xs text-slate-400 mb-2">Designed specifically for Odisha Board High School Students.</p>
-                <div class="text-xs text-slate-300 space-y-1">
-                    <p><i class="fa-solid fa-envelope text-brand-orange mr-2"></i> support@sikshyasathi.in</p>
-                    <p><i class="fa-solid fa-location-dot text-brand-orange mr-2"></i> Bhubaneswar, Odisha</p>
-                </div>
-            </div>
-        </div>
-        <div class="container mx-auto px-4 border-t border-slate-800 mt-8 pt-4 text-center text-xs text-slate-500">
-            © 2026 SIKSHYA SATHI. All Rights Reserved. Strictly follows BSE Odisha Curriculum.
-        </div>
-    </footer>
-
-    <!-- JavaScript Application Engine -->
-    <script>
-        // Global Application State
-        const state = {
-            currentClass: '10', // '9' or '10'
-            activeTab: 'home',
-            activeChapterTab: 'notes',
-            selectedSubject: 'science',
-            selectedChapter: 'ch1',
-            darkMode: false,
-            mockTestState: {
-                activeTest: null,
-                currentQIndex: 0,
-                answers: {},
-                timerSeconds: 900,
-                timerInterval: null
-            }
-        };
-
-        // Data Models for Subjects & Chapters
-        const db = {
-            '10': {
-                science: {
-                    name: 'Science (ବିଜ୍ଞାନ)',
-                    icon: 'fa-flask',
-                    color: 'blue',
-                    chapters: [
-                        { id: 'ch1', title: 'Chemical Reactions & Equations (ରାସାୟନିକ ପ୍ରତିକ୍ରିୟା)', progress: 80 },
-                        { id: 'ch2', title: 'Acids, Bases & Salts (ଅମ୍ଳ, କ୍ଷାରକ ଓ ଲବଣ)', progress: 40 },
-                        { id: 'ch3', title: 'Life Processes (ଜୀବନ ପ୍ରକ୍ରିୟା)', progress: 60 }
-                    ]
-                },
-                math: {
-                    name: 'Mathematics (ଗଣିତ)',
-                    icon: 'fa-calculator',
-                    color: 'orange',
-                    chapters: [
-                        { id: 'ch1', title: 'Quadratic Equations (ଦ୍ୱିଘାତ ସମୀକରଣ)', progress: 90 },
-                        { id: 'ch2', title: 'Arithmetic Progression (ସମାନ୍ତର ପ୍ରଗତି)', progress: 30 },
-                        { id: 'ch3', title: 'Trigonometry (ତ୍ରିକୋଣମିତି)', progress: 10 }
-                    ]
-                },
-                english: {
-                    name: 'English',
-                    icon: 'fa-book-atlas',
-                    color: 'purple',
-                    chapters: [
-                        { id: 'ch1', title: 'A Letter to God (Prose)', progress: 100 },
-                        { id: 'ch2', title: 'At the High School (Prose)', progress: 50 },
-                        { id: 'ch3', title: 'Grammar: Direct & Indirect Speech', progress: 70 }
-                    ]
-                },
-                history: {
-                    name: 'History & Political Science',
-                    icon: 'fa-landmark',
-                    color: 'emerald',
-                    chapters: [
-                        { id: 'ch1', title: 'Freedom Movement in Odisha (ଓଡ଼ିଶାରେ ସ୍ୱାଧୀନତା ସଂଗ୍ରାମ)', progress: 65 },
-                        { id: 'ch2', title: 'Indian Constitution (ଭାରତୀୟ ସମ୍ବିଧାନ)', progress: 20 }
-                    ]
-                },
-                geography: {
-                    name: 'Geography & Economics',
-                    icon: 'fa-earth-asia',
-                    color: 'amber',
-                    chapters: [
-                        { id: 'ch1', title: 'Resources and Development (ସମ୍ବଳ ଓ ବିକାଶ)', progress: 45 },
-                        { id: 'ch2', title: 'Climate & Agriculture (ଜଳବାୟୁ ଓ କୃଷି)', progress: 10 }
-                    ]
-                }
-            },
-            '9': {
-                science: {
-                    name: 'Science (ବିଜ୍ଞାନ - Class 9)',
-                    icon: 'fa-microscope',
-                    color: 'blue',
-                    chapters: [
-                        { id: 'ch1', title: 'Matter in Our Surroundings (ଆମ ଚାରିପାଖର ପଦାର୍ଥ)', progress: 50 },
-                        { id: 'ch2', title: 'Fundamental Unit of Life: Cell (କୋଷ)', progress: 85 }
-                    ]
-                },
-                math: {
-                    name: 'Mathematics (ଗଣିତ - Class 9)',
-                    icon: 'fa-square-root-variable',
-                    color: 'orange',
-                    chapters: [
-                        { id: 'ch1', title: 'Real Numbers (ବାସ୍ତବ ସଂଖ୍ୟା)', progress: 60 },
-                        { id: 'ch2', title: 'Polynomials (ବହୁପଦ ରାଶି)', progress: 40 }
-                    ]
-                },
-                english: {
-                    name: 'English (Class 9)',
-                    icon: 'fa-feather',
-                    color: 'purple',
-                    chapters: [
-                        { id: 'ch1', title: 'The Price of Flowers', progress: 95 }
-                    ]
-                }
-            }
-        };
-
-        // Mock Tests Database
-        const mockTestsDB = [
-            {
-                id: 'science_ch1',
-                title: 'Chemical Reactions & Equations - BSE Pattern',
-                subject: 'science',
-                category: 'chapter',
-                questionsCount: 5,
-                durationMins: 15,
-                questions: [
-                    {
-                        id: 1,
-                        q: "What type of reaction takes place when magnesium ribbon burns in oxygen? (ମ୍ୟାଗ୍ନେସିଅମ୍ ଫିତା ବାୟୁରେ ଜଳିଲେ କେଉଁ ପ୍ରକାରର ପ୍ରତିକ୍ରିୟା ଘଟେ?)",
-                        options: [
-                            "Combination Reaction (ସଂଶ୍ଳେଷଣ ପ୍ରତିକ୍ରିୟା)",
-                            "Decomposition Reaction (ବିଘଟନ ପ୍ରତିକ୍ରିୟା)",
-                            "Displacement Reaction (ବିସ୍ଥାପନ ପ୍ରତିକ୍ରିୟା)",
-                            "Double Displacement Reaction (ଦ୍ୱି-ବିସ୍ଥାପନ)"
-                        ],
-                        correct: 0,
-                        explanation: "Burning magnesium combines with oxygen to form magnesium oxide (2Mg + O₂ → 2MgO). When two or more substances combine to form a single product, it is called a Combination Reaction (ସଂଶ୍ଳେଷଣ ପ୍ରତିକ୍ରିୟା)."
-                    },
-                    {
-                        id: 2,
-                        q: "Which gas is evolved when zinc reacts with dilute sulphuric acid?",
-                        options: ["Oxygen (O₂)", "Hydrogen (H₂)", "Carbon Dioxide (CO₂)", "Nitrogen (N₂)"],
-                        correct: 1,
-                        explanation: "Zn + H₂SO₄ → ZnSO₄ + H₂↑. Hydrogen gas produces a pop sound when tested with a burning candle."
-                    },
-                    {
-                        id: 3,
-                        q: "The chemical formula of Rust (ଖତରା/କଳଙ୍କୀ) is:",
-                        options: ["Fe₂O₃ • xH₂O", "FeO", "Fe₃O₄", "Fe(OH)₃"],
-                        correct: 0,
-                        explanation: "Rusting of iron requires both oxygen and moisture, forming hydrated iron oxide Fe₂O₃ • xH₂O."
-                    },
-                    {
-                        id: 4,
-                        q: "A reaction in which energy is absorbed is known as:",
-                        options: ["Exothermic Reaction", "Endothermic Reaction (ତାପଶୋଷୀ ପ୍ରତିକ୍ରିୟା)", "Redox Reaction", "Combustion"],
-                        correct: 1,
-                        explanation: "Reactions in which heat or energy is absorbed are called Endothermic Reactions (ତାପଶୋଷୀ ପ୍ରତିକ୍ରିୟା)."
-                    },
-                    {
-                        id: 5,
-                        q: "In the reaction CuO + H₂ → Cu + H₂O, which substance is oxidized?",
-                        options: ["CuO", "H₂", "Cu", "H₂O"],
-                        correct: 1,
-                        explanation: "Hydrogen gains oxygen to become water (H₂O), so H₂ is oxidized."
-                    }
-                ]
-            }
-        ];
-
-        // App Initialization
-        window.onload = function() {
-            initCountdownTimer();
-            renderHomeSubjects();
-            renderSubjectsTab();
-            renderMockTestCards();
-            renderDownloadsGrid();
-            openChapter('science', 'ch1');
-            initPerformanceChart();
-        };
-
-        // Dark Mode Toggle Logic
-        function toggleDarkMode() {
-            state.darkMode = !state.darkMode;
-            document.documentElement.classList.toggle('dark', state.darkMode);
-            const themeIcon = document.getElementById('themeIcon');
-            themeIcon.className = state.darkMode ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-        }
-
-        // Global Class Selector (Class 9 vs Class 10)
-        function selectGlobalClass(cls) {
-            state.currentClass = cls;
-            
-            // Toggle Header Button UI
-            document.getElementById('class9Btn').className = cls === '9' 
-                ? "px-2.5 py-1 text-xs font-bold rounded-lg transition-all bg-brand-blue text-white shadow-sm"
-                : "px-2.5 py-1 text-xs font-bold rounded-lg transition-all text-slate-600 dark:text-slate-300 hover:text-brand-blue";
-            
-            document.getElementById('class10Btn').className = cls === '10' 
-                ? "px-2.5 py-1 text-xs font-bold rounded-lg transition-all bg-brand-blue text-white shadow-sm"
-                : "px-2.5 py-1 text-xs font-bold rounded-lg transition-all text-slate-600 dark:text-slate-300 hover:text-brand-blue";
-
-            // Update Class Labels
-            document.querySelectorAll('.current-class-display').forEach(el => el.innerText = `Class ${cls}`);
-            document.getElementById('heroClassLabel').innerText = `Class ${cls}`;
-
-            // Re-render UI views
-            renderHomeSubjects();
-            renderSubjectsTab();
-        }
-
-        // Main Tab Navigation Switcher
-        function switchTab(tabId) {
-            state.activeTab = tabId;
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
-
-            // Update Navigation Buttons Style
-            document.querySelectorAll('.nav-tab').forEach(btn => {
-                btn.classList.remove('bg-brand-blue', 'text-white');
-                btn.classList.add('hover:bg-slate-100', 'dark:hover:bg-slate-800');
-            });
-            event.currentTarget?.classList?.add('bg-brand-blue', 'text-white');
-        }
-
-        // Exam Countdown Timer Setup
-        function initCountdownTimer() {
-            // Target exam date set for BSE Odisha Board
-            const targetDate = new Date();
-            targetDate.setDate(targetDate.getDate() + 184);
-
-            setInterval(() => {
-                const now = new Date();
-                const diff = targetDate - now;
-
-                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-                const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-                const mins = Math.floor((diff / 1000 / 60) % 60);
-                const secs = Math.floor((diff / 1000) % 60);
-
-                document.getElementById('daysCount').innerText = days;
-                document.getElementById('hoursCount').innerText = hours < 10 ? '0' + hours : hours;
-                document.getElementById('minsCount').innerText = mins < 10 ? '0' + mins : mins;
-                document.getElementById('secsCount').innerText = secs < 10 ? '0' + secs : secs;
-            }, 1000);
-        }
-
-        // Render Home Featured Subjects
-        function renderHomeSubjects() {
-            const container = document.getElementById('homeSubjectGrid');
-            const classData = db[state.currentClass] || db['10'];
-            let html = '';
-
-            Object.keys(classData).forEach(key => {
-                const sub = classData[key];
-                html += `
-                    <div onclick="openChapter('${key}', 'ch1')" class="p-4 rounded-2xl bg-white dark:bg-brand-cardDark border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition cursor-pointer group text-center space-y-2">
-                        <div class="w-12 h-12 mx-auto rounded-xl bg-blue-50 dark:bg-slate-800 text-brand-blue dark:text-blue-400 flex items-center justify-center text-xl group-hover:scale-110 transition">
-                            <i class="fa-solid ${sub.icon}"></i>
-                        </div>
-                        <h4 class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-brand-blue">${sub.name}</h4>
-                        <span class="text-[10px] text-slate-400 block">${sub.chapters.length} Chapters</span>
-                    </div>
-                `;
-            });
-
-            container.innerHTML = html;
-        }
-
-        // Render Detailed Subjects Tab Cards
-        function renderSubjectsTab() {
-            const container = document.getElementById('subjectCardsContainer');
-            const classData = db[state.currentClass] || db['10'];
-            let html = '';
-
-            Object.keys(classData).forEach(key => {
-                const sub = classData[key];
-                html += `
-                    <div class="bg-white dark:bg-brand-cardDark rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-12 h-12 rounded-2xl bg-brand-blue text-white flex items-center justify-center text-xl font-bold shadow-md">
-                                <i class="fa-solid ${sub.icon}"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-extrabold text-slate-900 dark:text-white text-base">${sub.name}</h3>
-                                <span class="text-xs text-slate-400">Class ${state.currentClass} BSE Curriculum</span>
-                            </div>
-                        </div>
-
-                        <div class="space-y-2 pt-2">
-                            <span class="text-xs font-bold text-slate-500 uppercase tracking-wide">Chapter List</span>
-                            ${sub.chapters.map(ch => `
-                                <div onclick="openChapter('${key}', '${ch.id}')" class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 hover:bg-blue-50 dark:hover:bg-slate-800 cursor-pointer flex items-center justify-between text-xs transition">
-                                    <span class="font-semibold text-slate-700 dark:text-slate-200">${ch.title}</span>
-                                    <span class="text-[10px] font-bold text-brand-orange bg-orange-50 dark:bg-orange-950 px-2 py-0.5 rounded">${ch.progress}%</span>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
-            });
-
-            container.innerHTML = html;
-        }
-
-        // Open Specific Chapter Content Reader
-        function openChapter(subjectKey, chapterId) {
-            state.selectedSubject = subjectKey;
-            state.selectedChapter = chapterId;
-
-            const sub = db[state.currentClass]?.[subjectKey] || db['10']['science'];
-            const ch = sub.chapters.find(c => c.id === chapterId) || sub.chapters[0];
-
-            document.getElementById('breadcrumbSubject').innerText = sub.name;
-            document.getElementById('breadcrumbChapter').innerText = ch.title;
-            document.getElementById('chapterSubjectTag').innerText = `${sub.name} • Class ${state.currentClass}`;
-            document.getElementById('chapterTitleDisplay').innerText = ch.title;
-
-            switchTab('chapter-view');
-            renderChapterTabContent();
-        }
-
-        // Switch Sub-tabs inside Chapter Reader
-        function switchChapterTab(tabName) {
-            state.activeChapterTab = tabName;
-            document.querySelectorAll('.ch-tab').forEach(btn => {
-                btn.classList.remove('bg-brand-blue', 'text-white');
-                btn.classList.add('bg-slate-100', 'dark:bg-slate-800', 'text-slate-700', 'dark:text-slate-300');
-            });
-            event.currentTarget?.classList?.remove('bg-slate-100', 'dark:bg-slate-800', 'text-slate-700', 'dark:text-slate-300');
-            event.currentTarget?.classList?.add('bg-brand-blue', 'text-white');
-
-            renderChapterTabContent();
-        }
-
-        // Render Active Chapter Tab
-        function renderChapterTabContent() {
-            const container = document.getElementById('ch-content-container');
-
-            if (state.activeChapterTab === 'notes') {
-                container.innerHTML = `
-                    <div class="space-y-6">
-                        <div class="p-4 rounded-xl bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800/60 text-xs text-orange-800 dark:text-orange-300">
-                            <strong><i class="fa-solid fa-circle-info mr-1"></i> Quick Note:</strong> This note covers 100% of the BSE Odisha Class 10 Board exam syllabus with Odia word meanings.
-                        </div>
-
-                        <div class="space-y-4 text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-                            <h3 class="text-lg font-bold text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-800 pb-2">
-                                1. What is a Chemical Reaction? (ରାସାୟନିକ ପ୍ରତିକ୍ରିୟା କ’ଣ?)
-                            </h3>
-                            <p>
-                                A process in which one or more substances (reactants) react to produce one or more different substances with entirely new chemical properties (products).
-                            </p>
-                            
-                            <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
-                                <span class="font-bold text-brand-blue text-xs block">Key Characteristics (ମୁଖ୍ୟ ଲକ୍ଷଣ):</span>
-                                <ul class="list-disc list-inside text-xs space-y-1">
-                                    <li>Change in State (ଅବସ୍ଥାର ପରିବର୍ତ୍ତନ)</li>
-                                    <li>Change in Colour (ରଙ୍ଗର ପରିବର୍ତ୍ତନ)</li>
-                                    <li>Evolution of Gas (ଗ୍ୟାସ୍‌ର ନିର୍ଗମନ)</li>
-                                    <li>Change in Temperature (ତାପମାତ୍ରାର ପରିବର୍ତ୍ତନ)</li>
-                                </ul>
-                            </div>
-
-                            <h3 class="text-lg font-bold text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-800 pb-2 pt-4">
-                                2. Balanced Chemical Equation (ସମତୁଲ ରାସାୟନିକ ସମୀକରଣ)
-                            </h3>
-                            <p>
-                                According to the <strong>Law of Conservation of Mass (ଦ୍ରବ୍ୟତ୍ୱ ସଂରକ୍ଷଣ ନିୟମ)</strong>, mass can neither be created nor destroyed in a chemical reaction. Therefore, the total number of atoms of each element on the reactant side must equal the product side.
-                            </p>
-                            <div class="p-3 bg-blue-900 text-white rounded-xl font-mono text-center text-xs font-bold">
-                                2Mg (s) + O₂ (g) → 2MgO (s)
-                            </div>
-                        </div>
-                    </div>
-                `;
-            } else if (state.activeChapterTab === 'odia-glossary') {
-                container.innerHTML = `
-                    <div class="space-y-4">
-                        <h3 class="text-base font-bold text-slate-900 dark:text-white">Important Difficult Words with Odia Meaning</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex justify-between items-center text-xs">
-                                <div>
-                                    <strong class="text-brand-blue dark:text-blue-400 block">Reactant</strong>
-                                    <span class="text-slate-500">Substances taking part in reaction</span>
-                                </div>
-                                <span class="font-bold text-slate-800 dark:text-slate-100 bg-blue-100 dark:bg-blue-950 px-2.5 py-1 rounded-lg">ପ୍ରତିକାରକ</span>
-                            </div>
-
-                            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex justify-between items-center text-xs">
-                                <div>
-                                    <strong class="text-brand-blue dark:text-blue-400 block">Product</strong>
-                                    <span class="text-slate-500">Substances formed in reaction</span>
-                                </div>
-                                <span class="font-bold text-slate-800 dark:text-slate-100 bg-blue-100 dark:bg-blue-950 px-2.5 py-1 rounded-lg">ଉତ୍ପାଦ</span>
-                            </div>
-
-                            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex justify-between items-center text-xs">
-                                <div>
-                                    <strong class="text-brand-blue dark:text-blue-400 block">Exothermic</strong>
-                                    <span class="text-slate-500">Releases heat energy</span>
-                                </div>
-                                <span class="font-bold text-slate-800 dark:text-slate-100 bg-blue-100 dark:bg-blue-950 px-2.5 py-1 rounded-lg">ତାପଉତ୍ପାଦୀ</span>
-                            </div>
-
-                            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex justify-between items-center text-xs">
-                                <div>
-                                    <strong class="text-brand-blue dark:text-blue-400 block">Precipitation</strong>
-                                    <span class="text-slate-500">Formation of insoluble solid</span>
-                                </div>
-                                <span class="font-bold text-slate-800 dark:text-slate-100 bg-blue-100 dark:bg-blue-950 px-2.5 py-1 rounded-lg">ଅବକ୍ଷେପଣ</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            } else {
-                container.innerHTML = `
-                    <div class="text-center py-10 space-y-3">
-                        <i class="fa-solid fa-file-shield text-4xl text-brand-orange"></i>
-                        <h4 class="text-base font-bold text-slate-900 dark:text-white">BSE Odisha Practice Module Ready</h4>
-                        <p class="text-xs text-slate-500 max-w-md mx-auto">This section is loaded with formula sheets, mind maps, and past board questions. Use the download center to print hard copies.</p>
-                        <button onclick="switchTab('mock-test')" class="px-5 py-2 bg-brand-blue text-white font-bold text-xs rounded-xl shadow">
-                            Practice Questions Now
-                        </button>
-                    </div>
-                `;
-            }
-        }
-
-        // Render Mock Test Selection Cards
-        function renderMockTestCards() {
-            const container = document.getElementById('mockTestCardsGrid');
-            let html = '';
-
-            mockTestsDB.forEach(test => {
-                html += `
-                    <div class="bg-white dark:bg-brand-cardDark rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-                        <div class="flex items-center justify-between">
-                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-brand-orange uppercase">${test.category} Test</span>
-                            <span class="text-xs text-slate-400"><i class="fa-regular fa-clock mr-1"></i> ${test.durationMins} Mins</span>
-                        </div>
-
-                        <div>
-                            <h4 class="font-extrabold text-slate-900 dark:text-white text-base">${test.title}</h4>
-                            <p class="text-xs text-slate-500 mt-1">BSE Pattern • ${test.questionsCount} High Quality MCQs with Odia Solutions</p>
-                        </div>
-
-                        <div class="flex items-center justify-between text-xs border-t border-slate-100 dark:border-slate-800 pt-3">
-                            <span class="font-semibold text-slate-600 dark:text-slate-300">Target Marks: 10 Marks</span>
-                            <button onclick="startSpecificTest('${test.id}')" class="px-4 py-2 rounded-xl bg-brand-blue hover:bg-blue-800 text-white font-bold text-xs shadow transition">
-                                Take Test
-                            </button>
-                        </div>
-                    </div>
-                `;
-            });
-
-            container.innerHTML = html;
-        }
-
-        // Start Specific Mock Test Engine
-        function startSpecificTest(testId) {
-            const test = mockTestsDB.find(t => t.id === testId) || mockTestsDB[0];
-            state.mockTestState.activeTest = test;
-            state.mockTestState.currentQIndex = 0;
-            state.mockTestState.answers = {};
-            state.mockTestState.timerSeconds = test.durationMins * 60;
-
-            document.getElementById('testSelectionHub').classList.add('hidden');
-            document.getElementById('testResultContainer').classList.add('hidden');
-            document.getElementById('liveTestContainer').classList.remove('hidden');
-
-            document.getElementById('activeTestTitle').innerText = test.title;
-            document.getElementById('totalQNum').innerText = test.questions.length;
-
-            renderActiveQuestion();
-            startTestTimer();
-        }
-
-        // Render Active Question inside Test Engine
-        function renderActiveQuestion() {
-            const test = state.mockTestState.activeTest;
-            const qIndex = state.mockTestState.currentQIndex;
-            const q = test.questions[qIndex];
-
-            document.getElementById('currentQNum').innerText = qIndex + 1;
-            document.getElementById('questionText').innerText = `${qIndex + 1}. ${q.q}`;
-
-            // Render Options
-            const optionsContainer = document.getElementById('optionsGrid');
-            optionsContainer.innerHTML = q.options.map((opt, idx) => {
-                const isSelected = state.mockTestState.answers[qIndex] === idx;
-                return `
-                    <div onclick="selectAnswerOption(${qIndex}, ${idx})" class="p-4 rounded-2xl border cursor-pointer transition flex items-center gap-3 ${isSelected ? 'border-brand-blue bg-blue-50 dark:bg-slate-800 font-bold' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/40 hover:bg-slate-50'}">
-                        <span class="w-6 h-6 rounded-full border flex items-center justify-center text-xs ${isSelected ? 'bg-brand-blue text-white border-brand-blue' : 'border-slate-400 text-slate-500'}">
-                            ${String.fromCharCode(65 + idx)}
-                        </span>
-                        <span class="text-xs text-slate-800 dark:text-slate-200">${opt}</span>
-                    </div>
-                `;
-            }).join('');
-
-            // Render Nav Pills
-            const pillsContainer = document.getElementById('questionPillsContainer');
-            pillsContainer.innerHTML = test.questions.map((_, idx) => {
-                const isAnswered = state.mockTestState.answers[idx] !== undefined;
-                const isCurrent = idx === qIndex;
-                return `
-                    <button onclick="jumpToQuestion(${idx})" class="w-7 h-7 rounded-lg text-xs font-bold transition ${isCurrent ? 'ring-2 ring-brand-orange bg-brand-blue text-white' : isAnswered ? 'bg-green-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'}">
-                        ${idx + 1}
-                    </button>
-                `;
-            }).join('');
-        }
-
-        function selectAnswerOption(qIdx, optionIdx) {
-            state.mockTestState.answers[qIdx] = optionIdx;
-            renderActiveQuestion();
-        }
-
-        function jumpToQuestion(idx) {
-            state.mockTestState.currentQIndex = idx;
-            renderActiveQuestion();
-        }
-
-        function navigateQuestion(direction) {
-            const newIndex = state.mockTestState.currentQIndex + direction;
-            if (newIndex >= 0 && newIndex < state.mockTestState.activeTest.questions.length) {
-                state.mockTestState.currentQIndex = newIndex;
-                renderActiveQuestion();
-            }
-        }
-
-        // Timer Logic for Mock Test
-        function startTestTimer() {
-            clearInterval(state.mockTestState.timerInterval);
-            state.mockTestState.timerInterval = setInterval(() => {
-                state.mockTestState.timerSeconds--;
-                const mins = Math.floor(state.mockTestState.timerSeconds / 60);
-                const secs = state.mockTestState.timerSeconds % 60;
-                document.getElementById('testTimerDisplay').innerText = `${mins < 10 ? '0' + mins : mins}:${secs < 10 ? '0' + secs : secs}`;
-
-                if (state.mockTestState.timerSeconds <= 0) {
-                    clearInterval(state.mockTestState.timerInterval);
-                    confirmSubmitTest();
-                }
-            }, 1000);
-        }
-
-        // Submit and Evaluate Mock Test
-        function confirmSubmitTest() {
-            clearInterval(state.mockTestState.timerInterval);
-            const test = state.mockTestState.activeTest;
-            let correctCount = 0;
-
-            const reviewList = document.getElementById('reviewQuestionsList');
-            let reviewHTML = '';
-
-            test.questions.forEach((q, idx) => {
-                const userAns = state.mockTestState.answers[idx];
-                const isCorrect = userAns === q.correct;
-                if (isCorrect) correctCount++;
-
-                reviewHTML += `
-                    <div class="p-4 rounded-2xl border ${isCorrect ? 'border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20' : 'border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20'} space-y-2">
-                        <div class="flex items-center justify-between text-xs font-bold">
-                            <span class="${isCorrect ? 'text-green-600' : 'text-red-600'}">
-                                ${isCorrect ? '<i class="fa-solid fa-check-circle mr-1"></i> Correct Answer' : '<i class="fa-solid fa-xmark-circle mr-1"></i> Incorrect / Unattempted'}
-                            </span>
-                            <span class="text-slate-400">Q${idx + 1}</span>
-                        </div>
-                        <h5 class="text-xs font-bold text-slate-800 dark:text-slate-200">${q.q}</h5>
-                        <div class="text-xs text-slate-600 dark:text-slate-400">
-                            <strong>Correct Option:</strong> ${q.options[q.correct]}
-                        </div>
-                        <div class="p-3 rounded-xl bg-white dark:bg-slate-800 text-xs italic text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                            💡 <strong>Explanation:</strong> ${q.explanation}
-                        </div>
-                    </div>
-                `;
-            });
-
-            reviewList.innerHTML = reviewHTML;
-
-            // Update Result Numbers
-            document.getElementById('resScore').innerText = `${correctCount * 2} / ${test.questions.length * 2}`;
-            document.getElementById('resAccuracy').innerText = `${Math.round((correctCount / test.questions.length) * 100)}%`;
-            document.getElementById('resTime').innerText = `04:12`;
-
-            document.getElementById('liveTestContainer').classList.add('hidden');
-            document.getElementById('testResultContainer').classList.remove('hidden');
-        }
-
-        function closeTestResult() {
-            document.getElementById('testResultContainer').classList.add('hidden');
-            document.getElementById('testSelectionHub').classList.remove('hidden');
-        }
-
-        // Pomodoro Timer Functionality
-        let pomoInterval = null;
-        let pomoSeconds = 1500; // 25 Mins
-        let pomoRunning = false;
-
-        function togglePomodoro() {
-            const btn = document.getElementById('pomoStartBtn');
-            if (pomoRunning) {
-                clearInterval(pomoInterval);
-                pomoRunning = false;
-                btn.innerHTML = '<i class="fa-solid fa-play"></i> Resume Session';
-                document.getElementById('pomoStatus').innerText = 'Paused';
-            } else {
-                pomoRunning = true;
-                btn.innerHTML = '<i class="fa-solid fa-pause"></i> Pause Session';
-                document.getElementById('pomoStatus').innerText = 'Focus Time...';
-
-                pomoInterval = setInterval(() => {
-                    pomoSeconds--;
-                    const m = Math.floor(pomoSeconds / 60);
-                    const s = pomoSeconds % 60;
-                    document.getElementById('pomoTimeDisplay').innerText = `${m < 10 ? '0' + m : m}:${s < 10 ? '0' + s : s}`;
-
-                    if (pomoSeconds <= 0) {
-                        clearInterval(pomoInterval);
-                        alert('Pomodoro session completed! Take a 5-minute break.');
-                        resetPomodoro();
-                    }
-                }, 1000);
-            }
-        }
-
-        function resetPomodoro() {
-            clearInterval(pomoInterval);
-            pomoSeconds = 1500;
-            pomoRunning = false;
-            document.getElementById('pomoTimeDisplay').innerText = '25:00';
-            document.getElementById('pomoStatus').innerText = 'Ready to Focus';
-            document.getElementById('pomoStartBtn').innerHTML = '<i class="fa-solid fa-play"></i> Start Session';
-        }
-
-        // Daily Goals Logic
-        function updateGoalsCount() {
-            const checkboxes = document.querySelectorAll('#goalsListContainer input[type="checkbox"]');
-            const checked = Array.from(checkboxes).filter(cb => cb.checked).length;
-            document.getElementById('goalsCompletedText').innerText = `${checked}/${checkboxes.length} Done`;
-        }
-
-        function addCustomGoal() {
-            const input = document.getElementById('newGoalInput');
-            if (!input.value.trim()) return;
-
-            const container = document.getElementById('goalsListContainer');
-            const newGoalHTML = `
-                <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                    <label class="flex items-center gap-3 cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200">
-                        <input type="checkbox" onchange="updateGoalsCount()" class="w-4 h-4 text-brand-blue rounded focus:ring-brand-blue">
-                        <span>${input.value}</span>
-                    </label>
-                    <span class="text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold px-2 py-0.5 rounded">CUSTOM</span>
-                </div>
-            `;
-            container.innerHTML += newGoalHTML;
-            input.value = '';
-            updateGoalsCount();
-        }
-
-        // Render Download Center Items
-        function renderDownloadsGrid() {
-            const container = document.getElementById('downloadFilesGrid');
-            const files = [
-                { title: 'Class 10 Science Formula Handbook PDF', category: 'Science', size: '2.4 MB', icon: 'fa-file-pdf', color: 'red' },
-                { title: 'BSE Odisha Math Trigonometry Short Tricks', category: 'Mathematics', size: '1.8 MB', icon: 'fa-file-pdf', color: 'red' },
-                { title: 'English Grammar Direct Speech Odia Rules Sheet', category: 'English', size: '1.1 MB', icon: 'fa-file-pdf', color: 'red' },
-                { title: 'History & Geography Map Practice Worksheets', category: 'Social Science', size: '3.5 MB', icon: 'fa-file-pdf', color: 'red' }
-            ];
-
-            let html = '';
-            files.forEach(f => {
-                html += `
-                    <div class="p-5 rounded-3xl bg-white dark:bg-brand-cardDark border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-                        <div class="flex items-center justify-between">
-                            <div class="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-950 text-red-600 flex items-center justify-center text-xl">
-                                <i class="fa-solid ${f.icon}"></i>
-                            </div>
-                            <span class="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2.5 py-1 rounded-full">${f.category}</span>
-                        </div>
-                        <div>
-                            <h4 class="text-xs font-bold text-slate-800 dark:text-white">${f.title}</h4>
-                            <span class="text-[10px] text-slate-400">PDF Document • ${f.size}</span>
-                        </div>
-                        <button onclick="downloadFileSimulation('${f.title}')" class="w-full py-2.5 rounded-xl bg-brand-blue hover:bg-blue-800 text-white font-bold text-xs transition flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-download"></i> Download PDF
-                        </button>
-                    </div>
-                `;
-            });
-
-            container.innerHTML = html;
-        }
-
-        function downloadFileSimulation(title) {
-            alert(`Starting download for: ${title}`);
-        }
-
-        // Admin Simulation logic
-        function simulateUpload() {
-            const title = document.getElementById('adminDocTitle').value;
-            if (!title) {
-                alert('Please enter a document title.');
-                return;
-            }
-            alert(`Document "${title}" uploaded successfully to BSE Odisha Class ${document.getElementById('adminClass').value} syllabus.`);
-            document.getElementById('adminDocTitle').value = '';
-            document.getElementById('adminDocSummary').value = '';
-        }
-
-        // Live Performance Chart using Chart.js
-        function initPerformanceChart() {
-            const ctx = document.getElementById('performanceChart')?.getContext('2d');
-            if (!ctx) return;
-
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
-                    datasets: [{
-                        label: 'Mock Test Score (%)',
-                        data: [65, 72, 80, 78, 88, 92],
-                        borderColor: '#1e40af',
-                        backgroundColor: 'rgba(30, 64, 175, 0.1)',
-                        fill: true,
-                        tension: 0.4,
-                        borderWidth: 3
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        y: { min: 0, max: 100 }
-                    }
-                }
-            });
-        }
-
-        // Global Search Bar Handler
-        function handleGlobalSearch(query) {
-            const dropdown = document.getElementById('searchDropdown');
-            if (!query.trim()) {
-                dropdown.classList.add('hidden');
-                return;
-            }
-
-            dropdown.classList.remove('hidden');
-            dropdown.innerHTML = `
-                <div class="p-2 text-xs font-bold text-slate-400 uppercase">Matching Search Results</div>
-                <div onclick="openChapter('science', 'ch1'); document.getElementById('searchDropdown').classList.add('hidden');" class="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl cursor-pointer text-xs">
-                    <strong class="text-brand-blue block">Chemical Reactions & Equations</strong>
-                    <span class="text-slate-500">Science • Class 10 Chapter 1</span>
-                </div>
-                <div onclick="openChapter('math', 'ch1'); document.getElementById('searchDropdown').classList.add('hidden');" class="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl cursor-pointer text-xs">
-                    <strong class="text-brand-orange block">Quadratic Equations (ଦ୍ୱିଘାତ ସମୀକରଣ)</strong>
-                    <span class="text-slate-500">Mathematics • Class 10 Chapter 1</span>
-                </div>
-            `;
-        }
-
-        function printChapter() {
-            window.print();
-        }
-
-        function bookmarkChapter() {
-            const btn = document.getElementById('bookmarkBtn');
-            btn.innerHTML = '<i class="fa-solid fa-bookmark text-brand-orange mr-1"></i> Bookmarked';
-        }
-    </script>
-</body>
-</html>
+                <div class="pt-2
