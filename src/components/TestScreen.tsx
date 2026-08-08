@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { MOCK_TESTS, LEADERBOARD_DATA } from '../data/odishaData';
 import { MockTest, QuizQuestion, TestResult } from '../types';
+import { fetchLiveMockTests } from '../services/aiService';
 import {
   Trophy,
   Clock,
@@ -35,11 +36,17 @@ export const TestScreen: React.FC = () => {
   const [timeLeftSeconds, setTimeLeftSeconds] = useState(0);
   const [isTestSubmitted, setIsTestSubmitted] = useState(false);
   const [lastResult, setLastResult] = useState<TestResult | null>(null);
+  const [liveMockTests, setLiveMockTests] = useState<MockTest[]>([]);
 
   const [leaderboardTab, setLeaderboardTab] = useState<'State' | 'District'>('State');
 
-  // Filter tests matching current class level
-  const classMockTests = MOCK_TESTS.filter((t) => t.classLevel === classLevel);
+  // Fetch admin-uploaded (database-backed) mock tests once on mount
+  useEffect(() => {
+    fetchLiveMockTests().then((tests) => setLiveMockTests(tests as MockTest[]));
+  }, []);
+
+  // Filter tests matching current class level (built-in + admin-uploaded, merged)
+  const classMockTests = [...MOCK_TESTS, ...liveMockTests].filter((t) => t.classLevel === classLevel);
 
   // Timer effect during active test
   useEffect(() => {
