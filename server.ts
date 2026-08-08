@@ -476,11 +476,16 @@ app.post('/api/admin/mocktest-from-pdf', async (req, res) => {
     const systemInstruction = `
 You are an expert BSE Odisha (Board of Secondary Education, Odisha) exam content editor.
 You will receive raw text extracted from a question paper or practice-question PDF.
-Convert it into a clean list of multiple-choice questions (MCQs) suitable for a mock test app.
+Convert it into a clean list of questions suitable for a mock test app. Questions can be either
+multiple-choice (MCQ) or short/long-answer (subjective) — keep them as whichever type they
+naturally are in the source.
 
 Rules:
-1. If the source already has options, use them. If a question has no options (e.g. it's a short-answer question),
-   create 4 plausible options yourself, with only one correct.
+1. If the source question already has clear options, use them exactly as MCQ options.
+2. If the source question is a short-answer / long-answer / subjective question (no options given,
+   e.g. "Explain why...", "What happened when..."), do NOT invent fake multiple-choice options.
+   Leave optionsEnglish and optionsOdia as empty arrays, and instead write the correct/model
+   answer in explanationEnglish and explanationOdia (2-4 sentences, exam-appropriate).
 2. Always provide a short explanation for the correct answer.
 3. Provide both English and Odia versions of the question, options, and explanation.
 4. Skip anything that is not a real question (headers, instructions, marks distribution tables, etc).
@@ -494,9 +499,11 @@ CRITICAL OUTPUT RULES (follow strictly):
   and just write the clean translated sentence instead.
 - Do not repeat the same sentence multiple times in one field.
 - Keep each question, option, and explanation short and exam-appropriate (one or two sentences).
+- Generate AT MOST 15 questions total, even if the source PDF has more. Prioritize the clearest,
+  most complete questions if you have to choose.
     `;
 
-    const prompt = `Class Level: ${classLevel || 'Class 10'}\nSubject: ${subjectId || 'General'}\n\nRaw extracted PDF text:\n"""\n${extractedText.slice(0, 15000)}\n"""\n\nConvert this into structured MCQs as per the instructions. Remember: output only clean final English/Odia text in every field, no reasoning or placeholder tokens.`;
+    const prompt = `Class Level: ${classLevel || 'Class 10'}\nSubject: ${subjectId || 'General'}\n\nRaw extracted PDF text:\n"""\n${extractedText.slice(0, 15000)}\n"""\n\nConvert this into structured MCQs as per the instructions (max 15 questions). Remember: output only clean final English/Odia text in every field, no reasoning or placeholder tokens.`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-3.6-flash',
@@ -504,6 +511,7 @@ CRITICAL OUTPUT RULES (follow strictly):
       config: {
         systemInstruction,
         temperature: 0.4,
+        maxOutputTokens: 8192,
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.OBJECT,
@@ -530,7 +538,15 @@ CRITICAL OUTPUT RULES (follow strictly):
     });
 
     const jsonText = response.text || '{"questions": []}';
-    const parsedData = JSON.parse(jsonText);
+    let parsedData: any;
+    try {
+      parsedData = JSON.parse(jsonText);
+    } catch (parseErr) {
+      console.error('[mocktest-from-pdf] JSON parse failed (likely truncated AI response). Length:', jsonText.length);
+      return res.status(422).json({
+        error: 'The AI response was too long and got cut off. Please try a shorter PDF (fewer questions), or split it into smaller PDFs and upload each separately.',
+      });
+    }
 
     // Sanitize: strip any leaked reasoning/placeholder tokens (e.g. ALL_CAPS_WITH_UNDERSCORES
     // runs, or suspiciously long fields) that a model occasionally leaks into its output.
@@ -550,12 +566,16 @@ CRITICAL OUTPUT RULES (follow strictly):
       .map((q: any, idx: number) => {
         const questionEnglish = sanitizeText(q.questionEnglish);
         const questionOdia = sanitizeText(q.questionOdia);
-        let optionsEnglish = Array.isArray(q.optionsEnglish) ? q.optionsEnglish.map(sanitizeText).filter(Boolean) : [];
-        let optionsOdia = Array.isArray(q.optionsOdia) ? q.optionsOdia.map(sanitizeText).filter(Boolean) : [];
-        // If the model didn't provide enough options, pad with simple generic distractors
-        // rather than discarding the whole question.
-        while (optionsEnglish.length < 4) optionsEnglish.push(`Option ${optionsEnglish.length + 1}`);
-        while (optionsOdia.length < 4) optionsOdia.push(`ବିକଳ୍ପ ${optionsOdia.length + 1}`);
+        const optionsEnglish = Array.isArray(q.optionsEnglish) ? q.optionsEnglish.map(sanitizeText).filter(Boolean) : [];
+        const optionsOdia = Array.isArray(q.optionsOdia) ? q.optionsOdia.map(sanitizeText).filter(Boolean) : [];
+        const explanationEnglish = sanitizeText(q.explanationEnglish);
+        const explanationOdia = sanitizeText(q.explanationOdia);
+
+        // If the source question genuinely didn't have (or the AI couldn't produce) at least
+        // 2 real options, don't invent fake "Option 1/2/3" choices — show it as a short-answer
+        // question instead, where the student self-checks against the model answer.
+        const hasRealOptions = optionsEnglish.length >= 2;
+
         return {
           id: `mt_${Date.now()}_${idx}`,
           classLevel: classLevel || 'Class 10',
@@ -563,11 +583,16 @@ CRITICAL OUTPUT RULES (follow strictly):
           difficulty: ['Easy', 'Medium', 'Hard'].includes(q.difficulty) ? q.difficulty : 'Medium',
           questionEnglish,
           questionOdia,
-          optionsEnglish,
-          optionsOdia,
-          correctOptionIndex: typeof q.correctOptionIndex === 'number' ? q.correctOptionIndex : 0,
-          explanationEnglish: sanitizeText(q.explanationEnglish),
-          explanationOdia: sanitizeText(q.explanationOdia),
+          questionType: hasRealOptions ? 'mcq' : 'short_answer',
+          optionsEnglish: hasRealOptions ? optionsEnglish : [],
+          optionsOdia: hasRealOptions ? optionsOdia : [],
+          correctOptionIndex: hasRealOptions
+            ? (typeof q.correctOptionIndex === 'number' ? q.correctOptionIndex : 0)
+            : 1, // sentinel used by the "I got it right" self-check button
+          explanationEnglish,
+          explanationOdia,
+          modelAnswerEnglish: hasRealOptions ? undefined : (explanationEnglish || 'Answer not available.'),
+          modelAnswerOdia: hasRealOptions ? undefined : (explanationOdia || ''),
         };
       })
       // Only drop a question if its actual question text is empty/broken after cleaning.
