@@ -1197,14 +1197,9 @@ export const PDF_LIBRARY_DATA: PDFDocument[] = [
   }
 ];
 
-export const LEADERBOARD_DATA: LeaderboardEntry[] = [
-  { rank: 1, name: 'Soumya Ranjan Sahoo', district: 'Cuttack', school: 'Ravenshaw Collegiate School', points: 2850, classLevel: 'Class 10', badge: '🏆 State Topper' },
-  { rank: 2, name: 'Priyanka Mohanty', district: 'Khordha (Bhubaneswar)', school: 'Capital High School', points: 2720, classLevel: 'Class 10', badge: '🥈 Star Scholar' },
-  { rank: 3, name: 'Ashish Kumar Jena', district: 'Balasore (Baleswar)', school: 'Zilla School Balasore', points: 2610, classLevel: 'Class 10', badge: '🥉 Math Wizard' },
-  { rank: 4, name: 'Subhashree Nayak', district: 'Puri', school: 'Puri Zilla School', points: 2480, classLevel: 'Class 10', badge: '⭐ Science Champ' },
-  { rank: 5, name: 'Dibyanshu Pradhan', district: 'Sambalpur', school: 'CSB Zilla School Sambalpur', points: 2390, classLevel: 'Class 9', badge: '🌟 Class 9 Topper' },
-  { rank: 6, name: 'Aakash Behera', district: 'Ganjam', school: 'City High School Berhampur', points: 2250, classLevel: 'Class 10', badge: '🔥 Quiz Master' }
-];
+// Real leaderboard entries now come from Firestore (see /api/leaderboard) — populated
+// automatically as real students complete mock tests. No fake/sample names here.
+export const LEADERBOARD_DATA: LeaderboardEntry[] = [];
 
 export const NOTIFICATIONS_DATA: NotificationItem[] = [
   {
