@@ -16,7 +16,69 @@ import {
   Sparkles,
   ChevronRight,
   ShieldAlert,
+  Eye,
 } from 'lucide-react';
+
+/**
+ * For subjective (non-MCQ) questions: the student thinks through their own answer,
+ * taps to reveal the model answer, then self-marks whether they got it right.
+ * `selected` follows the same 0/1 sentinel used for MCQ scoring (1 = correct, 0 = incorrect).
+ */
+const ShortAnswerBlock: React.FC<{
+  question: QuizQuestion;
+  language: string;
+  selected: number | undefined;
+  onMark: (isCorrect: boolean) => void;
+}> = ({ question, language, selected, onMark }) => {
+  const [revealed, setRevealed] = useState(false);
+  const modelAnswer = language === 'Odia' ? question.modelAnswerOdia : question.modelAnswerEnglish;
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-slate-500 dark:text-slate-400 italic">
+        This is a written-answer question. Think through your answer, then reveal the model answer to self-check.
+      </p>
+
+      {!revealed ? (
+        <button
+          onClick={() => setRevealed(true)}
+          className="w-full p-4 rounded-2xl border border-dashed border-blue-300 dark:border-blue-700 bg-blue-50/60 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-bold text-sm flex items-center justify-center gap-2"
+        >
+          <Eye className="w-4 h-4" />
+          Reveal Model Answer
+        </button>
+      ) : (
+        <div className="space-y-3">
+          <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-sm text-emerald-800 dark:text-emerald-300">
+            {modelAnswer || 'Model answer not available for this question.'}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => onMark(true)}
+              className={`p-3 rounded-xl font-bold text-xs border ${
+                selected === 1
+                  ? 'bg-emerald-600 text-white border-emerald-600'
+                  : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200'
+              }`}
+            >
+              ✅ I got it right
+            </button>
+            <button
+              onClick={() => onMark(false)}
+              className={`p-3 rounded-xl font-bold text-xs border ${
+                selected === 0
+                  ? 'bg-red-600 text-white border-red-600'
+                  : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200'
+              }`}
+            >
+              ❌ I got it wrong
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const TestScreen: React.FC = () => {
   const {
@@ -28,6 +90,7 @@ export const TestScreen: React.FC = () => {
     setActiveTab,
     setSelectedChapter,
   } = useApp();
+
 
   const [selectedDifficulty, setSelectedDifficulty] = useState<'Easy' | 'Medium' | 'Hard'>('Medium');
   const [activeTest, setActiveTest] = useState<MockTest | null>(null);
@@ -260,36 +323,45 @@ export const TestScreen: React.FC = () => {
                     </p>
                   </div>
 
-                  {/* Options List */}
-                  <div className="space-y-3">
-                    {(language === 'Odia' ? q.optionsOdia : q.optionsEnglish).map(
-                      (opt, oIdx) => {
-                        const isSelected = selectedOpt === oIdx;
-                        return (
-                          <button
-                            key={oIdx}
-                            onClick={() => handleSelectOption(q.id, oIdx)}
-                            className={`w-full p-4 rounded-2xl border text-left transition-all font-medium text-sm flex items-center justify-between ${
-                              isSelected
-                                ? 'bg-blue-50 dark:bg-blue-900/40 border-blue-500 text-blue-700 dark:text-blue-300 shadow-sm'
-                                : 'bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-700/60 hover:bg-slate-100 dark:hover:bg-slate-800'
-                            }`}
-                          >
-                            <span>{opt}</span>
-                            <div
-                              className={`w-5 h-5 rounded-full border flex items-center justify-center ${
+                  {/* Options List (MCQ) OR Reveal-Answer flow (short answer) */}
+                  {q.questionType === 'short_answer' ? (
+                    <ShortAnswerBlock
+                      question={q}
+                      language={language}
+                      selected={selectedOpt}
+                      onMark={(isCorrect) => handleSelectOption(q.id, isCorrect ? 1 : 0)}
+                    />
+                  ) : (
+                    <div className="space-y-3">
+                      {(language === 'Odia' ? q.optionsOdia : q.optionsEnglish).map(
+                        (opt, oIdx) => {
+                          const isSelected = selectedOpt === oIdx;
+                          return (
+                            <button
+                              key={oIdx}
+                              onClick={() => handleSelectOption(q.id, oIdx)}
+                              className={`w-full p-4 rounded-2xl border text-left transition-all font-medium text-sm flex items-center justify-between ${
                                 isSelected
-                                  ? 'border-blue-600 bg-blue-600 text-white'
-                                  : 'border-slate-300'
+                                  ? 'bg-blue-50 dark:bg-blue-900/40 border-blue-500 text-blue-700 dark:text-blue-300 shadow-sm'
+                                  : 'bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-700/60 hover:bg-slate-100 dark:hover:bg-slate-800'
                               }`}
                             >
-                              {isSelected && <CheckCircle2 className="w-3.5 h-3.5" />}
-                            </div>
-                          </button>
-                        );
-                      }
-                    )}
-                  </div>
+                              <span>{opt}</span>
+                              <div
+                                className={`w-5 h-5 rounded-full border flex items-center justify-center ${
+                                  isSelected
+                                    ? 'border-blue-600 bg-blue-600 text-white'
+                                    : 'border-slate-300'
+                                }`}
+                              >
+                                {isSelected && <CheckCircle2 className="w-3.5 h-3.5" />}
+                              </div>
+                            </button>
+                          );
+                        }
+                      )}
+                    </div>
+                  )}
 
                   {/* Question Controls Navigation */}
                   <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-700">
