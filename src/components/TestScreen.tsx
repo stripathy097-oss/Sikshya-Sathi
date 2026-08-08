@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { MOCK_TESTS, LEADERBOARD_DATA } from '../data/odishaData';
+import { MOCK_TESTS } from '../data/odishaData';
 import { MockTest, QuizQuestion, TestResult } from '../types';
-import { fetchLiveMockTests } from '../services/aiService';
+import { fetchLiveMockTests, fetchLiveLeaderboard } from '../services/aiService';
 import {
   Trophy,
   Clock,
@@ -102,11 +102,22 @@ export const TestScreen: React.FC = () => {
   const [liveMockTests, setLiveMockTests] = useState<MockTest[]>([]);
 
   const [leaderboardTab, setLeaderboardTab] = useState<'State' | 'District'>('State');
+  const [liveLeaderboard, setLiveLeaderboard] = useState<any[]>([]);
 
   // Fetch admin-uploaded (database-backed) mock tests once on mount
   useEffect(() => {
     fetchLiveMockTests().then((tests) => setLiveMockTests(tests as MockTest[]));
   }, []);
+
+  // Fetch the real leaderboard (built from actual student test submissions)
+  useEffect(() => {
+    fetchLiveLeaderboard().then(setLiveLeaderboard);
+  }, [testHistory]);
+
+  const displayedLeaderboard =
+    leaderboardTab === 'District'
+      ? liveLeaderboard.filter((lb) => lb.district === student.district)
+      : liveLeaderboard;
 
   // Filter tests matching current class level (built-in + admin-uploaded, merged)
   const classMockTests = [...MOCK_TESTS, ...liveMockTests].filter((t) => t.classLevel === classLevel);
@@ -476,41 +487,48 @@ export const TestScreen: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              {LEADERBOARD_DATA.map((lb) => (
-                <div
-                  key={lb.rank}
-                  className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 flex items-center justify-between text-xs"
-                >
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`w-6 h-6 rounded-full flex items-center justify-center font-bold ${
-                        lb.rank === 1
-                          ? 'bg-amber-500 text-white'
-                          : lb.rank === 2
-                          ? 'bg-slate-300 text-slate-800'
-                          : lb.rank === 3
-                          ? 'bg-amber-700 text-white'
-                          : 'bg-slate-200 dark:bg-slate-700 text-slate-700'
-                      }`}
-                    >
-                      {lb.rank}
-                    </span>
-                    <div>
-                      <h4 className="font-bold text-slate-900 dark:text-slate-100">{lb.name}</h4>
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                        {lb.school} • {lb.district}
-                      </p>
+              {displayedLeaderboard.length === 0 ? (
+                <div className="text-center py-8 text-xs text-slate-500 dark:text-slate-400">
+                  {language === 'Odia'
+                    ? 'ଏପର୍ଯ୍ୟନ୍ତ କେହି ମେଧାବୀ ତାଲିକାରେ ନାହାନ୍ତି। ଏକ ଟେଷ୍ଟ ସମାପ୍ତ କରି ପ୍ରଥମ ହୁଅନ୍ତୁ!'
+                    : 'No one on the leaderboard yet — finish a mock test with your name set in Profile to be the first!'}
+                </div>
+              ) : (
+                displayedLeaderboard.map((lb, idx) => (
+                  <div
+                    key={lb.name + lb.district + idx}
+                    className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 flex items-center justify-between text-xs"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`w-6 h-6 rounded-full flex items-center justify-center font-bold ${
+                          idx === 0
+                            ? 'bg-amber-500 text-white'
+                            : idx === 1
+                            ? 'bg-slate-300 text-slate-800'
+                            : idx === 2
+                            ? 'bg-amber-700 text-white'
+                            : 'bg-slate-200 dark:bg-slate-700 text-slate-700'
+                        }`}
+                      >
+                        {idx + 1}
+                      </span>
+                      <div>
+                        <h4 className="font-bold text-slate-900 dark:text-slate-100">{lb.name}</h4>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                          {lb.school ? `${lb.school} • ` : ''}{lb.district}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <span className="font-extrabold text-blue-600 dark:text-blue-400 block">
+                        {lb.points} Pts
+                      </span>
                     </div>
                   </div>
-
-                  <div className="text-right">
-                    <span className="font-extrabold text-blue-600 dark:text-blue-400 block">
-                      {lb.points} Pts
-                    </span>
-                    <span className="text-[10px] text-amber-600 font-semibold">{lb.badge}</span>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>
