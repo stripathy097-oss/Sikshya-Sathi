@@ -550,8 +550,12 @@ CRITICAL OUTPUT RULES (follow strictly):
       .map((q: any, idx: number) => {
         const questionEnglish = sanitizeText(q.questionEnglish);
         const questionOdia = sanitizeText(q.questionOdia);
-        const optionsEnglish = Array.isArray(q.optionsEnglish) ? q.optionsEnglish.map(sanitizeText).filter(Boolean) : [];
-        const optionsOdia = Array.isArray(q.optionsOdia) ? q.optionsOdia.map(sanitizeText).filter(Boolean) : [];
+        let optionsEnglish = Array.isArray(q.optionsEnglish) ? q.optionsEnglish.map(sanitizeText).filter(Boolean) : [];
+        let optionsOdia = Array.isArray(q.optionsOdia) ? q.optionsOdia.map(sanitizeText).filter(Boolean) : [];
+        // If the model didn't provide enough options, pad with simple generic distractors
+        // rather than discarding the whole question.
+        while (optionsEnglish.length < 4) optionsEnglish.push(`Option ${optionsEnglish.length + 1}`);
+        while (optionsOdia.length < 4) optionsOdia.push(`ବିକଳ୍ପ ${optionsOdia.length + 1}`);
         return {
           id: `mt_${Date.now()}_${idx}`,
           classLevel: classLevel || 'Class 10',
@@ -566,8 +570,10 @@ CRITICAL OUTPUT RULES (follow strictly):
           explanationOdia: sanitizeText(q.explanationOdia),
         };
       })
-      // Drop any question that still looks broken/empty after cleaning
-      .filter((q: any) => isUsableField(q.questionEnglish) && q.optionsEnglish.length >= 2);
+      // Only drop a question if its actual question text is empty/broken after cleaning.
+      .filter((q: any) => isUsableField(q.questionEnglish));
+
+    console.log(`[mocktest-from-pdf] Raw questions from AI: ${(parsedData.questions || []).length}, usable after cleaning: ${questions.length}`);
 
     if (questions.length === 0) {
       return res.status(422).json({
