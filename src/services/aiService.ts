@@ -1,4 +1,4 @@
-import { AIDoubtRequest, AIDoubtResponse, AIPlannerRequest, AIPlannerResponse, Flashcard, AIFlashcardsRequest } from '../types';
+import { AIDoubtRequest, AIDoubtResponse, AIPlannerRequest, AIPlannerResponse, Flashcard, AIFlashcardsRequest, AIMockTestImportRequest, AIMockTestImportResponse } from '../types';
 
 export async function solveDoubtWithAI(req: AIDoubtRequest): Promise<AIDoubtResponse> {
   try {
@@ -91,5 +91,65 @@ export async function generateFlashcardsWithAI(req: AIFlashcardsRequest): Promis
   } catch (error: any) {
     console.error('Error in generateFlashcardsWithAI:', error);
     throw error;
+  }
+}
+
+export async function generateMockTestFromPdf(req: AIMockTestImportRequest): Promise<AIMockTestImportResponse> {
+  try {
+    const res = await fetch('/api/admin/mocktest-from-pdf', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(req),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.details || err.error || 'Server error converting PDF to mock test');
+    }
+
+    const data = await res.json();
+    return {
+      titleEnglish: data.titleEnglish,
+      titleOdia: data.titleOdia,
+      totalMarks: data.totalMarks,
+      questions: data.questions || [],
+    };
+  } catch (error: any) {
+    console.error('Error in generateMockTestFromPdf:', error);
+    throw error;
+  }
+}
+
+export async function saveMockTestToApp(mockTest: {
+  titleEnglish: string;
+  titleOdia: string;
+  classLevel: string;
+  subjectId?: string;
+  durationMinutes: number;
+  totalMarks: number;
+  questions: any[];
+}): Promise<{ status: string; id: string }> {
+  const res = await fetch('/api/mocktests', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(mockTest),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.details || err.error || 'Failed to save mock test to the app.');
+  }
+  return res.json();
+}
+
+export async function fetchLiveMockTests(): Promise<any[]> {
+  try {
+    const res = await fetch('/api/mocktests');
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.mockTests || [];
+  } catch {
+    return [];
   }
 }
