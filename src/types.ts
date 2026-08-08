@@ -65,6 +65,12 @@ export interface QuizQuestion {
   correctOptionIndex: number;
   explanationEnglish: string;
   explanationOdia: string;
+  /** 'mcq' (default) shows clickable options. 'short_answer' shows a reveal-the-answer flow
+   *  for questions that don't naturally have multiple-choice options (e.g. board exam
+   *  long/short answer questions imported from a PDF). */
+  questionType?: 'mcq' | 'short_answer';
+  modelAnswerEnglish?: string;
+  modelAnswerOdia?: string;
 }
 
 export interface MockTest {
@@ -201,4 +207,20 @@ export interface AIFlashcardsRequest {
   subjectId?: SubjectId;
   category?: string;
   count?: number;
+}
+
+export interface AIMockTestImportRequest {
+  pdfBase64: string;
+  classLevel: ClassLevel;
+  subjectId?: SubjectId;
+  titleEnglish: string;
+  titleOdia?: string;
+  durationMinutes?: number;
+}
+
+export interface AIMockTestImportResponse {
+  titleEnglish: string;
+  titleOdia: string;
+  totalMarks: number;
+  questions: QuizQuestion[];
 }
