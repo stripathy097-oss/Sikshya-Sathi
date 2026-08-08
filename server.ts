@@ -485,15 +485,25 @@ Rules:
 3. Provide both English and Odia versions of the question, options, and explanation.
 4. Skip anything that is not a real question (headers, instructions, marks distribution tables, etc).
 5. Assign difficulty ('Easy' | 'Medium' | 'Hard') based on how conceptually hard the question is.
+
+CRITICAL OUTPUT RULES (follow strictly):
+- Every text field must contain ONLY the final, clean, human-readable sentence — nothing else.
+- NEVER include your own reasoning, notes-to-self, planning text, or placeholder/status phrases
+  (for example: never write things like "OKAY_FINISHED", "LETS_WRITE", "PLACEHOLDER", or any
+  ALL_CAPS_WITH_UNDERSCORES text). If you catch yourself about to write anything like that, stop
+  and just write the clean translated sentence instead.
+- Do not repeat the same sentence multiple times in one field.
+- Keep each question, option, and explanation short and exam-appropriate (one or two sentences).
     `;
 
-    const prompt = `Class Level: ${classLevel || 'Class 10'}\nSubject: ${subjectId || 'General'}\n\nRaw extracted PDF text:\n"""\n${extractedText.slice(0, 15000)}\n"""\n\nConvert this into structured MCQs as per the instructions.`;
+    const prompt = `Class Level: ${classLevel || 'Class 10'}\nSubject: ${subjectId || 'General'}\n\nRaw extracted PDF text:\n"""\n${extractedText.slice(0, 15000)}\n"""\n\nConvert this into structured MCQs as per the instructions. Remember: output only clean final English/Odia text in every field, no reasoning or placeholder tokens.`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-3.6-flash',
       contents: prompt,
       config: {
         systemInstruction,
+        temperature: 0.4,
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.OBJECT,
@@ -522,19 +532,48 @@ Rules:
     const jsonText = response.text || '{"questions": []}';
     const parsedData = JSON.parse(jsonText);
 
-    const questions = (parsedData.questions || []).map((q: any, idx: number) => ({
-      id: `mt_${Date.now()}_${idx}`,
-      classLevel: classLevel || 'Class 10',
-      subjectId: subjectId || 'english',
-      difficulty: ['Easy', 'Medium', 'Hard'].includes(q.difficulty) ? q.difficulty : 'Medium',
-      questionEnglish: q.questionEnglish || '',
-      questionOdia: q.questionOdia || '',
-      optionsEnglish: q.optionsEnglish || [],
-      optionsOdia: q.optionsOdia || [],
-      correctOptionIndex: typeof q.correctOptionIndex === 'number' ? q.correctOptionIndex : 0,
-      explanationEnglish: q.explanationEnglish || '',
-      explanationOdia: q.explanationOdia || '',
-    }));
+    // Sanitize: strip any leaked reasoning/placeholder tokens (e.g. ALL_CAPS_WITH_UNDERSCORES
+    // runs, or suspiciously long fields) that a model occasionally leaks into its output.
+    const sanitizeText = (raw: any): string => {
+      if (typeof raw !== 'string') return '';
+      let text = raw
+        .replace(/\b[A-Z0-9]+(?:_[A-Z0-9]+){2,}\b/g, '') // remove CAPS_WITH_UNDERSCORES tokens
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+      if (text.length > 400) text = text.slice(0, 400).trim();
+      return text;
+    };
+
+    const isUsableField = (text: string) => text.length > 0 && text.length < 400;
+
+    const questions = (parsedData.questions || [])
+      .map((q: any, idx: number) => {
+        const questionEnglish = sanitizeText(q.questionEnglish);
+        const questionOdia = sanitizeText(q.questionOdia);
+        const optionsEnglish = Array.isArray(q.optionsEnglish) ? q.optionsEnglish.map(sanitizeText).filter(Boolean) : [];
+        const optionsOdia = Array.isArray(q.optionsOdia) ? q.optionsOdia.map(sanitizeText).filter(Boolean) : [];
+        return {
+          id: `mt_${Date.now()}_${idx}`,
+          classLevel: classLevel || 'Class 10',
+          subjectId: subjectId || 'english',
+          difficulty: ['Easy', 'Medium', 'Hard'].includes(q.difficulty) ? q.difficulty : 'Medium',
+          questionEnglish,
+          questionOdia,
+          optionsEnglish,
+          optionsOdia,
+          correctOptionIndex: typeof q.correctOptionIndex === 'number' ? q.correctOptionIndex : 0,
+          explanationEnglish: sanitizeText(q.explanationEnglish),
+          explanationOdia: sanitizeText(q.explanationOdia),
+        };
+      })
+      // Drop any question that still looks broken/empty after cleaning
+      .filter((q: any) => isUsableField(q.questionEnglish) && q.optionsEnglish.length >= 2);
+
+    if (questions.length === 0) {
+      return res.status(422).json({
+        error: 'The AI could not generate clean questions from this PDF. Please try a different PDF, or one with clearer question text.',
+      });
+    }
 
     const mockTest = {
       titleEnglish: titleEnglish || 'AI Generated Mock Test',
