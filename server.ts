@@ -88,6 +88,53 @@ app.get('/api/mocktests', async (req, res) => {
 });
 
 /**
+ * Submit/update a student's leaderboard entry (real data only — called after a student
+ * finishes a mock test and has set a name on their profile). Keyed by name+district so
+ * repeated submissions from the same student update their score rather than duplicating.
+ */
+app.post('/api/leaderboard', async (req, res) => {
+  try {
+    if (!db) {
+      return res.json({ status: 'skipped' }); // Gracefully degrade if DB isn't configured yet
+    }
+    const { name, district, school, points, classLevel } = req.body;
+    if (!name || typeof points !== 'number') {
+      return res.status(400).json({ error: 'Invalid leaderboard entry.' });
+    }
+    const docId = `${name}_${district || 'na'}`.toLowerCase().replace(/[^a-z0-9]+/g, '_').slice(0, 120);
+    await db.collection('leaderboard').doc(docId).set({
+      name,
+      district: district || '',
+      school: school || '',
+      points,
+      classLevel: classLevel || 'Class 10',
+      updatedAt: Date.now(),
+    });
+    res.json({ status: 'success' });
+  } catch (error: any) {
+    console.error('Error saving leaderboard entry:', error);
+    res.status(500).json({ error: 'Failed to save leaderboard entry.', details: error.message || String(error) });
+  }
+});
+
+/**
+ * Fetch the real top-scoring students (by points) for the leaderboard screen.
+ */
+app.get('/api/leaderboard', async (req, res) => {
+  try {
+    if (!db) {
+      return res.json({ leaderboard: [] });
+    }
+    const snapshot = await db.collection('leaderboard').orderBy('points', 'desc').limit(20).get();
+    const leaderboard = snapshot.docs.map((doc, idx) => ({ rank: idx + 1, ...doc.data() }));
+    res.json({ leaderboard });
+  } catch (error: any) {
+    console.error('Error fetching leaderboard:', error);
+    res.status(500).json({ error: 'Failed to fetch leaderboard.', details: error.message || String(error) });
+  }
+});
+
+/**
  * AI Doubt Solver API Route
  * Tailored for Odisha Board (BSE Odisha) Class 9 & 10 Students
  */
