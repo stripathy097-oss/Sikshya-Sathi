@@ -8,7 +8,8 @@ import {
   SubjectId,
   Chapter,
 } from '../types';
-import { NOTIFICATIONS_DATA, CHAPTERS_DATA, LEADERBOARD_DATA } from '../data/odishaData';
+import { NOTIFICATIONS_DATA, CHAPTERS_DATA } from '../data/odishaData';
+import { submitLeaderboardEntry } from '../services/aiService';
 
 export type ActiveTab = 'home' | 'learn' | 'ai' | 'tests' | 'profile' | 'grammar' | 'pdf' | 'admin' | 'flashcards';
 
@@ -60,27 +61,49 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+const DEFAULT_STUDENT: StudentProfile = {
+  name: 'Student',
+  mobile: '',
+  email: '',
+  classLevel: 'Class 10',
+  school: '',
+  district: '',
+  language: 'English',
+  isPremium: false,
+  streakDays: 0,
+  lastActiveDate: new Date().toISOString(),
+  points: 0,
+  savedBookmarks: [],
+  downloadedPdfs: [],
+};
+
+const loadStudentFromStorage = (): StudentProfile => {
+  try {
+    const raw = localStorage.getItem('sikshyaSathi_student');
+    if (raw) return { ...DEFAULT_STUDENT, ...JSON.parse(raw) };
+  } catch {
+    // ignore corrupt storage
+  }
+  return DEFAULT_STUDENT;
+};
+
+const loadTestHistoryFromStorage = (): TestResult[] => {
+  try {
+    const raw = localStorage.getItem('sikshyaSathi_testHistory');
+    if (raw) return JSON.parse(raw);
+  } catch {
+    // ignore corrupt storage
+  }
+  return [];
+};
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [classLevel, setClassLevelState] = useState<ClassLevel>('Class 10');
   const [language, setLanguage] = useState<LanguagePref>('English');
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
 
-  const [student, setStudent] = useState<StudentProfile>({
-    name: 'Satyajit Tripathy',
-    mobile: '+91 98765 43210',
-    email: 'stripathy097@gmail.com',
-    classLevel: 'Class 10',
-    school: 'Ravenshaw Collegiate School',
-    district: 'Cuttack',
-    language: 'English',
-    isPremium: false,
-    streakDays: 5,
-    lastActiveDate: new Date().toISOString(),
-    points: 450,
-    savedBookmarks: ['c10_eng_ch1', 'c10_math_ch1'],
-    downloadedPdfs: ['pdf_1'],
-  });
+  const [student, setStudent] = useState<StudentProfile>(loadStudentFromStorage);
 
   const [selectedSubjectId, setSelectedSubjectId] = useState<SubjectId | null>(null);
   const [selectedChapter, setSelectedChapter] = useState<Chapter | null>(null);
@@ -92,8 +115,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isRazorpayOpen, setIsRazorpayOpen] = useState(false);
   const [isPlannerOpen, setIsPlannerOpen] = useState(false);
 
-  const [testHistory, setTestHistory] = useState<TestResult[]>([]);
+  const [testHistory, setTestHistory] = useState<TestResult[]>(loadTestHistoryFromStorage);
   const [isSpeaking, setIsSpeaking] = useState(false);
+
+  // Persist student profile & test history locally so edits/scores survive a reload
+  useEffect(() => {
+    try {
+      localStorage.setItem('sikshyaSathi_student', JSON.stringify(student));
+    } catch {
+      // storage may be unavailable (private browsing) — fail silently
+    }
+  }, [student]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('sikshyaSathi_testHistory', JSON.stringify(testHistory));
+    } catch {
+      // ignore
+    }
+  }, [testHistory]);
 
   // Sync dark mode class with html document element
   useEffect(() => {
@@ -136,10 +176,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addTestResult = (result: TestResult) => {
     setTestHistory((prev) => [result, ...prev]);
-    setStudent((prev) => ({
-      ...prev,
-      points: prev.points + Math.round(result.score * 10),
-    }));
+    setStudent((prev) => {
+      const updated = { ...prev, points: prev.points + Math.round(result.score * 10) };
+      // Best-effort: submit to the real leaderboard (only if the student has set a name).
+      if (updated.name && updated.name !== 'Student') {
+        submitLeaderboardEntry({
+          name: updated.name,
+          district: updated.district || 'Odisha',
+          school: updated.school || '',
+          points: updated.points,
+          classLevel: updated.classLevel,
+        }).catch(() => {
+          // Non-critical — ignore network/leaderboard failures
+        });
+      }
+      return updated;
+    });
   };
 
   // Text to speech helper for voice teacher
