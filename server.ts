@@ -2,6 +2,9 @@ import express from 'express';
 import path from 'path';
 import dotenv from 'dotenv';
 import { GoogleGenAI, Type } from '@google/genai';
+import pdfParse from 'pdf-parse';
+import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { getFirestore, Firestore } from 'firebase-admin/firestore';
 
 dotenv.config();
 
@@ -20,9 +23,68 @@ const ai = new GoogleGenAI({
   },
 });
 
+// Initialize Firebase Admin (Firestore) for persistent storage of admin-uploaded content.
+// Expects FIREBASE_SERVICE_ACCOUNT env var to contain the full service-account JSON (as a string).
+let db: Firestore | null = null;
+try {
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    if (!getApps().length) {
+      initializeApp({
+        credential: cert(serviceAccount),
+      });
+    }
+    db = getFirestore();
+    console.log('✅ Firebase Firestore connected.');
+  } else {
+    console.warn('⚠️  FIREBASE_SERVICE_ACCOUNT not set — admin-uploaded content will not be saved permanently.');
+  }
+} catch (err) {
+  console.error('❌ Failed to initialize Firebase Admin:', err);
+}
+
 // Health check route
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', app: 'Sikshya Sathi Backend' });
+  res.json({ status: 'ok', app: 'Sikshya Sathi Backend', database: db ? 'connected' : 'not configured' });
+});
+
+/**
+ * Save an admin-generated (or admin-created) mock test permanently to Firestore.
+ */
+app.post('/api/mocktests', async (req, res) => {
+  try {
+    if (!db) {
+      return res.status(503).json({ error: 'Database not configured. Please set up FIREBASE_SERVICE_ACCOUNT first.' });
+    }
+    const mockTest = req.body;
+    if (!mockTest.titleEnglish || !Array.isArray(mockTest.questions)) {
+      return res.status(400).json({ error: 'Invalid mock test payload.' });
+    }
+    const id = mockTest.id || `mock_${Date.now()}`;
+    await db.collection('mockTests').doc(id).set({ ...mockTest, id, createdAt: Date.now() });
+    res.json({ status: 'success', id });
+  } catch (error: any) {
+    console.error('Error saving mock test:', error);
+    res.status(500).json({ error: 'Failed to save mock test.', details: error.message || String(error) });
+  }
+});
+
+/**
+ * Fetch all mock tests that have been saved to Firestore by admins.
+ * The frontend merges these with the built-in static mock tests.
+ */
+app.get('/api/mocktests', async (req, res) => {
+  try {
+    if (!db) {
+      return res.json({ mockTests: [] }); // Gracefully degrade if DB isn't configured yet
+    }
+    const snapshot = await db.collection('mockTests').orderBy('createdAt', 'desc').get();
+    const mockTests = snapshot.docs.map((doc) => doc.data());
+    res.json({ mockTests });
+  } catch (error: any) {
+    console.error('Error fetching mock tests:', error);
+    res.status(500).json({ error: 'Failed to fetch mock tests.', details: error.message || String(error) });
+  }
 });
 
 /**
@@ -282,6 +344,213 @@ Each flashcard MUST include:
     console.error('Error in /api/ai/flashcards:', error);
     res.status(500).json({
       error: 'Failed to generate flashcards using AI.',
+      details: error.message || String(error),
+    });
+  }
+});
+
+/**
+ * AI Mock Test Importer — reads an uploaded PDF (question paper / mock test)
+ * and converts it into structured MCQ questions for the app's Mock Test system.
+ */
+app.post('/api/ai/import-mock-test', async (req, res) => {
+  try {
+    const { pdfBase64, classLevel, subjectId, titleEnglish, titleOdia, durationMinutes } = req.body;
+
+    if (!pdfBase64) {
+      return res.status(400).json({ error: 'Please upload a PDF file.' });
+    }
+
+    const cleanBase64 = pdfBase64.replace(/^data:application\/pdf;base64,/, '');
+
+    const systemInstruction = `
+You are "Sikshya Sathi AI" content digitizer for BSE Odisha (Board of Secondary Education, Odisha) Class 9 and 10 students.
+You will be given a PDF of a question paper, mock test, or practice sheet.
+Read the ENTIRE PDF carefully and extract every objective / multiple-choice question you can confidently identify.
+For each question, produce:
+- questionEnglish and questionOdia (translate/provide Odia version if the source is English-only, and vice versa)
+- optionsEnglish and optionsOdia (exactly 4 options each)
+- correctOptionIndex (0-3) based on the correct answer if shown in the PDF, or your own best subject-matter judgement if no answer key is present
+- explanationEnglish and explanationOdia (a short 1-2 line reason the correct option is correct)
+- difficulty: 'Easy' | 'Medium' | 'Hard' based on the question's complexity
+
+Class: ${classLevel || 'Class 10'}
+Subject: ${subjectId || 'General BSE Odisha Syllabus'}
+
+If a question in the PDF is subjective/descriptive (not MCQ), SKIP it — only extract objective/MCQ-style questions.
+Do not invent questions that are not present in the PDF.
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.6-flash',
+      contents: {
+        parts: [
+          { inlineData: { mimeType: 'application/pdf', data: cleanBase64 } },
+          { text: 'Extract all objective/MCQ questions from this document as instructed.' },
+        ],
+      },
+      config: {
+        systemInstruction,
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            questions: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  questionEnglish: { type: Type.STRING },
+                  questionOdia: { type: Type.STRING },
+                  optionsEnglish: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  optionsOdia: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  correctOptionIndex: { type: Type.NUMBER },
+                  explanationEnglish: { type: Type.STRING },
+                  explanationOdia: { type: Type.STRING },
+                  difficulty: { type: Type.STRING },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const jsonText = response.text || '{"questions": []}';
+    const parsedData = JSON.parse(jsonText);
+
+    const questions = (parsedData.questions || []).map((q: any, idx: number) => ({
+      id: `imported_${Date.now()}_${idx}`,
+      classLevel: classLevel || 'Class 10',
+      subjectId: subjectId || 'english',
+      difficulty: q.difficulty === 'Easy' || q.difficulty === 'Hard' ? q.difficulty : 'Medium',
+      questionEnglish: q.questionEnglish || '',
+      questionOdia: q.questionOdia || '',
+      optionsEnglish: q.optionsEnglish || [],
+      optionsOdia: q.optionsOdia || [],
+      correctOptionIndex: typeof q.correctOptionIndex === 'number' ? q.correctOptionIndex : 0,
+      explanationEnglish: q.explanationEnglish || '',
+      explanationOdia: q.explanationOdia || '',
+    }));
+
+    res.json({
+      status: 'success',
+      titleEnglish: titleEnglish || 'Imported Mock Test',
+      titleOdia: titleOdia || 'ଆମଦାନୀ ମକ୍ ଟେଷ୍ଟ',
+      totalMarks: questions.length,
+      durationMinutes: durationMinutes || Math.max(15, questions.length * 1.5),
+      questions,
+    });
+  } catch (error: any) {
+    console.error('Error in /api/ai/import-mock-test:', error);
+    res.status(500).json({
+      error: 'Failed to extract mock test from PDF.',
+      details: error.message || String(error),
+    });
+  }
+});
+
+/**
+ * Admin: Convert an uploaded PDF (question paper / practice set) into a
+ * structured Mock Test (array of MCQs) using Gemini AI.
+ */
+app.post('/api/admin/mocktest-from-pdf', async (req, res) => {
+  try {
+    const { pdfBase64, classLevel, subjectId, titleEnglish, titleOdia, durationMinutes } = req.body;
+
+    if (!pdfBase64) {
+      return res.status(400).json({ error: 'Please upload a PDF file.' });
+    }
+
+    // 1. Extract raw text from the PDF
+    const cleanBase64 = pdfBase64.replace(/^data:application\/pdf;base64,/, '');
+    const pdfBuffer = Buffer.from(cleanBase64, 'base64');
+    const parsed = await pdfParse(pdfBuffer);
+    const extractedText = (parsed.text || '').trim();
+
+    if (!extractedText) {
+      return res.status(400).json({ error: 'Could not read any text from this PDF. Please upload a text-based PDF (not a scanned image).' });
+    }
+
+    // 2. Ask Gemini to convert the raw question-paper text into structured MCQs
+    const systemInstruction = `
+You are an expert BSE Odisha (Board of Secondary Education, Odisha) exam content editor.
+You will receive raw text extracted from a question paper or practice-question PDF.
+Convert it into a clean list of multiple-choice questions (MCQs) suitable for a mock test app.
+
+Rules:
+1. If the source already has options, use them. If a question has no options (e.g. it's a short-answer question),
+   create 4 plausible options yourself, with only one correct.
+2. Always provide a short explanation for the correct answer.
+3. Provide both English and Odia versions of the question, options, and explanation.
+4. Skip anything that is not a real question (headers, instructions, marks distribution tables, etc).
+5. Assign difficulty ('Easy' | 'Medium' | 'Hard') based on how conceptually hard the question is.
+    `;
+
+    const prompt = `Class Level: ${classLevel || 'Class 10'}\nSubject: ${subjectId || 'General'}\n\nRaw extracted PDF text:\n"""\n${extractedText.slice(0, 15000)}\n"""\n\nConvert this into structured MCQs as per the instructions.`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.6-flash',
+      contents: prompt,
+      config: {
+        systemInstruction,
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            questions: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  questionEnglish: { type: Type.STRING },
+                  questionOdia: { type: Type.STRING },
+                  optionsEnglish: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  optionsOdia: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  correctOptionIndex: { type: Type.NUMBER },
+                  explanationEnglish: { type: Type.STRING },
+                  explanationOdia: { type: Type.STRING },
+                  difficulty: { type: Type.STRING },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const jsonText = response.text || '{"questions": []}';
+    const parsedData = JSON.parse(jsonText);
+
+    const questions = (parsedData.questions || []).map((q: any, idx: number) => ({
+      id: `mt_${Date.now()}_${idx}`,
+      classLevel: classLevel || 'Class 10',
+      subjectId: subjectId || 'english',
+      difficulty: ['Easy', 'Medium', 'Hard'].includes(q.difficulty) ? q.difficulty : 'Medium',
+      questionEnglish: q.questionEnglish || '',
+      questionOdia: q.questionOdia || '',
+      optionsEnglish: q.optionsEnglish || [],
+      optionsOdia: q.optionsOdia || [],
+      correctOptionIndex: typeof q.correctOptionIndex === 'number' ? q.correctOptionIndex : 0,
+      explanationEnglish: q.explanationEnglish || '',
+      explanationOdia: q.explanationOdia || '',
+    }));
+
+    const mockTest = {
+      titleEnglish: titleEnglish || 'AI Generated Mock Test',
+      titleOdia: titleOdia || 'AI ଜେନେରେଟେଡ୍ ମକ୍ ଟେଷ୍ଟ',
+      totalMarks: questions.length,
+      questions,
+    };
+
+    res.json({
+      status: 'success',
+      ...mockTest,
+    });
+  } catch (error: any) {
+    console.error('Error in /api/admin/mocktest-from-pdf:', error);
+    res.status(500).json({
+      error: 'Failed to convert PDF into a mock test.',
       details: error.message || String(error),
     });
   }
