@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { ODISHA_DISTRICTS, SUBJECTS } from '../data/odishaData';
-import { generateMockTestFromPdf, saveMockTestToApp, generateChapterFromPdf, saveChapterToApp } from '../services/aiService';
+import { generateMockTestFromPdf, saveMockTestToApp, generateChapterFromPdf, saveChapterToApp, splitBookIntoChapters, generateChapterFromRawText } from '../services/aiService';
 import { QuizQuestion } from '../types';
 import {
   Shield,
@@ -32,6 +32,7 @@ export const AdminPanel: React.FC = () => {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   // Chapter-from-textbook-PDF states (BULK: select many chapter PDFs, auto-process all)
+  const [chMode, setChMode] = useState<'perChapterFiles' | 'wholeBook'>('wholeBook');
   const [chFiles, setChFiles] = useState<File[]>([]);
   const [chClassLevel, setChClassLevel] = useState<'Class 9' | 'Class 10'>('Class 10');
   const [chSubject, setChSubject] = useState('english');
@@ -40,6 +41,9 @@ export const AdminPanel: React.FC = () => {
   const [chBatchProgress, setChBatchProgress] = useState<
     { fileName: string; status: 'pending' | 'generating' | 'publishing' | 'done' | 'error'; titleEnglish?: string; error?: string }[]
   >([]);
+  const [wholeBookFile, setWholeBookFile] = useState<File | null>(null);
+  const [wholeBookSplitting, setWholeBookSplitting] = useState(false);
+  const [wholeBookError, setWholeBookError] = useState<string | null>(null);
 
   // Mock-test-from-PDF states (BULK: select many test-paper PDFs, auto-process all)
   const [mtFiles, setMtFiles] = useState<File[]>([]);
@@ -64,9 +68,64 @@ export const AdminPanel: React.FC = () => {
     });
 
   /**
-   * ONE-CLICK BULK MODE: select every chapter's PDF for a subject at once. This loops
-   * through them automatically — generate with AI, then publish live — one after another,
-   * so the admin doesn't have to repeat the form for every single chapter.
+   * TRUE ONE-CLICK MODE: upload the entire textbook (one PDF, whole subject). The AI first
+   * detects every chapter's boundaries, then each detected chapter is generated + published
+   * automatically — no manual splitting into separate PDFs needed.
+   */
+  const handleRunWholeBookBatch = async () => {
+    if (!wholeBookFile) {
+      setWholeBookError('Please choose the whole-book PDF first.');
+      return;
+    }
+    setWholeBookError(null);
+    setWholeBookSplitting(true);
+    setChBatchProgress([]);
+
+    try {
+      const pdfBase64 = await fileToBase64(wholeBookFile);
+      const detectedChapters = await splitBookIntoChapters(pdfBase64);
+      setWholeBookSplitting(false);
+
+      if (detectedChapters.length === 0) {
+        setWholeBookError('Could not detect any chapters in this PDF.');
+        return;
+      }
+
+      setChBatchRunning(true);
+      setChBatchProgress(detectedChapters.map((c) => ({ fileName: c.titleEnglish, status: 'pending' })));
+
+      for (let i = 0; i < detectedChapters.length; i++) {
+        const dc = detectedChapters[i];
+        setChBatchProgress((prev) => prev.map((p, idx) => (idx === i ? { ...p, status: 'generating', titleEnglish: dc.titleEnglish } : p)));
+        try {
+          const chapter = await generateChapterFromRawText({
+            rawText: dc.rawText,
+            classLevel: chClassLevel,
+            subjectId: chSubject,
+            chapterNumber: dc.chapterNumber,
+            titleEnglish: dc.titleEnglish,
+            titleOdia: dc.titleOdia,
+          });
+
+          setChBatchProgress((prev) => prev.map((p, idx) => (idx === i ? { ...p, status: 'publishing', titleEnglish: chapter.titleEnglish } : p)));
+          await saveChapterToApp(chapter);
+
+          setChBatchProgress((prev) => prev.map((p, idx) => (idx === i ? { ...p, status: 'done', titleEnglish: chapter.titleEnglish } : p)));
+        } catch (err: any) {
+          setChBatchProgress((prev) => prev.map((p, idx) => (idx === i ? { ...p, status: 'error', error: err.message || 'Failed' } : p)));
+        }
+      }
+
+      setChBatchRunning(false);
+      showSuccess(`Whole book processed! ${detectedChapters.length} chapters detected and published.`);
+    } catch (err: any) {
+      setWholeBookSplitting(false);
+      setWholeBookError(err.message || 'Could not split this book into chapters.');
+    }
+  };
+
+  /**
+   * ONE-CLICK BULK MODE: select many chapter PDFs, auto-process all.
    */
   const handleRunChapterBatch = async () => {
     if (chFiles.length === 0) {
@@ -263,14 +322,30 @@ export const AdminPanel: React.FC = () => {
             <div>
               <h2 className="font-bold text-base text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <BookOpen className="w-4 h-4 text-purple-600" />
-                Bulk-Generate All Chapters from Textbook PDFs
+                Generate All Chapters from the Textbook
               </h2>
               <p className="text-xs text-slate-500 mt-1">
-                Download the official BSE Odisha textbook chapter PDFs from{' '}
-                <span className="font-semibold">sme.odisha.gov.in</span>, then select ALL of them at once
-                here (one PDF per chapter). Click one button — the AI reads each one, builds the full
-                chapter, and publishes it live automatically, one after another. No repeating forms.
+                Download the official BSE Odisha textbook from{' '}
+                <span className="font-semibold">sme.odisha.gov.in</span>. Upload the whole book PDF and
+                the AI will find every chapter, build each one, and publish it live — automatically.
               </p>
+            </div>
+
+            <div className="inline-flex p-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold">
+              <button
+                onClick={() => setChMode('wholeBook')}
+                disabled={chBatchRunning || wholeBookSplitting}
+                className={`px-3 py-1.5 rounded-lg transition ${chMode === 'wholeBook' ? 'bg-white dark:bg-slate-700 shadow-sm text-purple-600' : 'text-slate-500'}`}
+              >
+                Upload Whole Book (1 PDF)
+              </button>
+              <button
+                onClick={() => setChMode('perChapterFiles')}
+                disabled={chBatchRunning || wholeBookSplitting}
+                className={`px-3 py-1.5 rounded-lg transition ${chMode === 'perChapterFiles' ? 'bg-white dark:bg-slate-700 shadow-sm text-purple-600' : 'text-slate-500'}`}
+              >
+                Already Split (many PDFs)
+              </button>
             </div>
 
             <div className="space-y-4">
@@ -313,31 +388,65 @@ export const AdminPanel: React.FC = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="text-xs font-bold text-slate-500 block mb-1">
-                  Select ALL Chapter PDFs for This Subject (multi-select)
-                </label>
-                <input
-                  type="file"
-                  accept="application/pdf"
-                  multiple
-                  disabled={chBatchRunning}
-                  onChange={(e) => setChFiles(e.target.files ? Array.from(e.target.files) : [])}
-                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 text-xs border border-slate-200 dark:border-slate-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-purple-600 file:text-white file:text-xs file:font-bold"
-                />
-                <p className="text-[10px] text-slate-400 mt-1">
-                  {chFiles.length > 0
-                    ? `${chFiles.length} file(s) selected — will become chapters ${chStartChapterNumber} to ${chStartChapterNumber + chFiles.length - 1}, in the order you selected them.`
-                    : 'Tip: select files in chapter order (Ctrl/Cmd-click, or select a whole folder at once).'}
-                </p>
-              </div>
+              {chMode === 'perChapterFiles' && (
+                <div>
+                  <label className="text-xs font-bold text-slate-500 block mb-1">
+                    Select ALL Chapter PDFs for This Subject (multi-select)
+                  </label>
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    multiple
+                    disabled={chBatchRunning}
+                    onChange={(e) => setChFiles(e.target.files ? Array.from(e.target.files) : [])}
+                    className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 text-xs border border-slate-200 dark:border-slate-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-purple-600 file:text-white file:text-xs file:font-bold"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    {chFiles.length > 0
+                      ? `${chFiles.length} file(s) selected — will become chapters ${chStartChapterNumber} to ${chStartChapterNumber + chFiles.length - 1}, in the order you selected them.`
+                      : 'Tip: select files in chapter order (Ctrl/Cmd-click, or select a whole folder at once).'}
+                  </p>
+                </div>
+              )}
+
+              {chMode === 'wholeBook' && (
+                <div>
+                  <label className="text-xs font-bold text-slate-500 block mb-1">
+                    Upload the Whole Textbook (1 PDF, all chapters)
+                  </label>
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    disabled={chBatchRunning || wholeBookSplitting}
+                    onChange={(e) => setWholeBookFile(e.target.files ? e.target.files[0] : null)}
+                    className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 text-xs border border-slate-200 dark:border-slate-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-purple-600 file:text-white file:text-xs file:font-bold"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    {wholeBookFile ? `Selected: ${wholeBookFile.name}` : 'The AI will find each chapter\'s starting point automatically — no manual splitting needed.'}
+                  </p>
+                  {wholeBookError && (
+                    <div className="mt-2 p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300 font-semibold">
+                      {wholeBookError}
+                    </div>
+                  )}
+                </div>
+              )}
 
               <button
-                onClick={handleRunChapterBatch}
-                disabled={chBatchRunning || chFiles.length === 0}
+                onClick={chMode === 'wholeBook' ? handleRunWholeBookBatch : handleRunChapterBatch}
+                disabled={
+                  chBatchRunning ||
+                  wholeBookSplitting ||
+                  (chMode === 'wholeBook' ? !wholeBookFile : chFiles.length === 0)
+                }
                 className="px-5 py-2.5 rounded-xl bg-purple-600 text-white font-bold text-xs shadow-md flex items-center gap-2 disabled:opacity-60"
               >
-                {chBatchRunning ? (
+                {wholeBookSplitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Finding chapters in the book...</span>
+                  </>
+                ) : chBatchRunning ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
                     <span>Processing all chapters — this can take a few minutes...</span>
@@ -585,4 +694,3 @@ export const AdminPanel: React.FC = () => {
     </div>
   );
 };
-
