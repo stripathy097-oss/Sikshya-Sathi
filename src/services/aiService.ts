@@ -178,3 +178,84 @@ export async function fetchLiveLeaderboard(): Promise<any[]> {
     return [];
   }
 }
+
+export async function generateChapterFromPdf(req: {
+  pdfBase64: string;
+  classLevel: string;
+  subjectId: string;
+  chapterNumber: number;
+  titleEnglish?: string;
+  titleOdia?: string;
+}): Promise<any> {
+  const res = await fetch('/api/admin/chapter-from-pdf', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(req),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.details || err.error || 'Failed to generate chapter from PDF');
+  }
+  const data = await res.json();
+  return data.chapter;
+}
+
+export async function saveChapterToApp(chapter: any): Promise<void> {
+  const res = await fetch('/api/chapters', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(chapter),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.details || err.error || 'Failed to save chapter to the app.');
+  }
+}
+
+export async function fetchLiveChapters(): Promise<any[]> {
+  try {
+    const res = await fetch('/api/chapters');
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.chapters || [];
+  } catch {
+    return [];
+  }
+}
+
+export async function splitBookIntoChapters(pdfBase64: string): Promise<
+  { chapterNumber: number; titleEnglish: string; titleOdia: string; rawText: string }[]
+> {
+  const res = await fetch('/api/admin/split-book', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pdfBase64 }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.details || err.error || 'Failed to split the book into chapters');
+  }
+  const data = await res.json();
+  return data.chapters || [];
+}
+
+export async function generateChapterFromRawText(req: {
+  rawText: string;
+  classLevel: string;
+  subjectId: string;
+  chapterNumber: number;
+  titleEnglish?: string;
+  titleOdia?: string;
+}): Promise<any> {
+  const res = await fetch('/api/admin/chapter-from-pdf', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(req),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.details || err.error || 'Failed to generate chapter');
+  }
+  const data = await res.json();
+  return data.chapter;
+}
