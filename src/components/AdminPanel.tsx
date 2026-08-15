@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { ODISHA_DISTRICTS, SUBJECTS } from '../data/odishaData';
-import { generateMockTestFromPdf, saveMockTestToApp } from '../services/aiService';
+import { generateMockTestFromPdf, saveMockTestToApp, generateChapterFromPdf, saveChapterToApp } from '../services/aiService';
 import { QuizQuestion } from '../types';
 import {
   Shield,
@@ -17,6 +17,7 @@ import {
   Sparkles,
   Loader2,
   Download,
+  BookOpen,
 } from 'lucide-react';
 
 export const AdminPanel: React.FC = () => {
@@ -26,35 +27,32 @@ export const AdminPanel: React.FC = () => {
     'analytics' | 'notes' | 'pdfs' | 'questions' | 'notifications' | 'users'
   >('analytics');
 
-  // Form states
-  const [noteTitle, setNoteTitle] = useState('');
-  const [noteSubject, setNoteSubject] = useState('english');
   const [notifTitle, setNotifTitle] = useState('');
   const [notifMessage, setNotifMessage] = useState('');
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Mock-test-from-PDF states
-  const [mtFile, setMtFile] = useState<File | null>(null);
+  // Chapter-from-textbook-PDF states (BULK: select many chapter PDFs, auto-process all)
+  const [chFiles, setChFiles] = useState<File[]>([]);
+  const [chClassLevel, setChClassLevel] = useState<'Class 9' | 'Class 10'>('Class 10');
+  const [chSubject, setChSubject] = useState('english');
+  const [chStartChapterNumber, setChStartChapterNumber] = useState(1);
+  const [chBatchRunning, setChBatchRunning] = useState(false);
+  const [chBatchProgress, setChBatchProgress] = useState<
+    { fileName: string; status: 'pending' | 'generating' | 'publishing' | 'done' | 'error'; titleEnglish?: string; error?: string }[]
+  >([]);
+
+  // Mock-test-from-PDF states (BULK: select many test-paper PDFs, auto-process all)
+  const [mtFiles, setMtFiles] = useState<File[]>([]);
   const [mtClassLevel, setMtClassLevel] = useState<'Class 9' | 'Class 10'>('Class 10');
   const [mtSubject, setMtSubject] = useState('english');
-  const [mtTitleEnglish, setMtTitleEnglish] = useState('');
-  const [mtTitleOdia, setMtTitleOdia] = useState('');
-  const [mtLoading, setMtLoading] = useState(false);
-  const [mtError, setMtError] = useState<string | null>(null);
-  const [mtResult, setMtResult] = useState<{ titleEnglish: string; titleOdia: string; totalMarks: number; questions: QuizQuestion[] } | null>(null);
-  const [mtSaving, setMtSaving] = useState(false);
-  const [mtSaved, setMtSaved] = useState(false);
+  const [mtBatchRunning, setMtBatchRunning] = useState(false);
+  const [mtBatchProgress, setMtBatchProgress] = useState<
+    { fileName: string; status: 'pending' | 'generating' | 'publishing' | 'done' | 'error'; titleEnglish?: string; questionCount?: number; error?: string }[]
+  >([]);
 
   const showSuccess = (msg: string) => {
     setSuccessMsg(msg);
     setTimeout(() => setSuccessMsg(null), 3000);
-  };
-
-  const handleUploadNote = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!noteTitle.trim()) return;
-    showSuccess(`Chapter note "${noteTitle}" uploaded successfully for Class 10!`);
-    setNoteTitle('');
   };
 
   const fileToBase64 = (file: File): Promise<string> =>
@@ -65,66 +63,88 @@ export const AdminPanel: React.FC = () => {
       reader.readAsDataURL(file);
     });
 
-  const handleGenerateMockTest = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!mtFile) {
-      setMtError('Please choose a PDF file first.');
+  /**
+   * ONE-CLICK BULK MODE: select every chapter's PDF for a subject at once. This loops
+   * through them automatically — generate with AI, then publish live — one after another,
+   * so the admin doesn't have to repeat the form for every single chapter.
+   */
+  const handleRunChapterBatch = async () => {
+    if (chFiles.length === 0) {
+      showSuccess('Please select at least one chapter PDF first.');
       return;
     }
-    setMtError(null);
-    setMtResult(null);
-    setMtSaved(false);
-    setMtLoading(true);
-    try {
-      const pdfBase64 = await fileToBase64(mtFile);
-      const result = await generateMockTestFromPdf({
-        pdfBase64,
-        classLevel: mtClassLevel,
-        subjectId: mtSubject as any,
-        titleEnglish: mtTitleEnglish || mtFile.name.replace('.pdf', ''),
-        titleOdia: mtTitleOdia,
-      });
-      setMtResult(result);
-      showSuccess(`AI generated ${result.questions.length} questions from the PDF!`);
-    } catch (err: any) {
-      setMtError(err.message || 'Something went wrong while processing the PDF.');
-    } finally {
-      setMtLoading(false);
+    setChBatchRunning(true);
+    setChBatchProgress(chFiles.map((f) => ({ fileName: f.name, status: 'pending' })));
+
+    for (let i = 0; i < chFiles.length; i++) {
+      const file = chFiles[i];
+      setChBatchProgress((prev) => prev.map((p, idx) => (idx === i ? { ...p, status: 'generating' } : p)));
+      try {
+        const pdfBase64 = await fileToBase64(file);
+        const chapter = await generateChapterFromPdf({
+          pdfBase64,
+          classLevel: chClassLevel,
+          subjectId: chSubject,
+          chapterNumber: chStartChapterNumber + i,
+        });
+
+        setChBatchProgress((prev) => prev.map((p, idx) => (idx === i ? { ...p, status: 'publishing', titleEnglish: chapter.titleEnglish } : p)));
+        await saveChapterToApp(chapter);
+
+        setChBatchProgress((prev) => prev.map((p, idx) => (idx === i ? { ...p, status: 'done', titleEnglish: chapter.titleEnglish } : p)));
+      } catch (err: any) {
+        setChBatchProgress((prev) => prev.map((p, idx) => (idx === i ? { ...p, status: 'error', error: err.message || 'Failed' } : p)));
+      }
     }
+
+    setChBatchRunning(false);
+    showSuccess('Batch complete! Check the results below for each chapter.');
   };
 
-  const handleSaveToApp = async () => {
-    if (!mtResult) return;
-    setMtSaving(true);
-    setMtError(null);
-    try {
-      await saveMockTestToApp({
-        titleEnglish: mtResult.titleEnglish,
-        titleOdia: mtResult.titleOdia,
-        classLevel: mtClassLevel,
-        subjectId: mtSubject,
-        durationMinutes: 30,
-        totalMarks: mtResult.totalMarks,
-        questions: mtResult.questions,
-      });
-      setMtSaved(true);
-      showSuccess('Mock test saved live — students will see it immediately!');
-    } catch (err: any) {
-      setMtError(err.message || 'Could not save to the app database.');
-    } finally {
-      setMtSaving(false);
+  /**
+   * ONE-CLICK BULK MODE: select every practice-test PDF at once. Each file becomes its
+   * own mock test, generated and published automatically one after another.
+   */
+  const handleRunMockTestBatch = async () => {
+    if (mtFiles.length === 0) {
+      showSuccess('Please select at least one PDF first.');
+      return;
     }
-  };
+    setMtBatchRunning(true);
+    setMtBatchProgress(mtFiles.map((f) => ({ fileName: f.name, status: 'pending' })));
 
-  const handleDownloadJson = () => {
-    if (!mtResult) return;
-    const blob = new Blob([JSON.stringify(mtResult, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `mocktest_${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    for (let i = 0; i < mtFiles.length; i++) {
+      const file = mtFiles[i];
+      setMtBatchProgress((prev) => prev.map((p, idx) => (idx === i ? { ...p, status: 'generating' } : p)));
+      try {
+        const pdfBase64 = await fileToBase64(file);
+        const result = await generateMockTestFromPdf({
+          pdfBase64,
+          classLevel: mtClassLevel,
+          subjectId: mtSubject as any,
+          titleEnglish: file.name.replace('.pdf', ''),
+          titleOdia: '',
+        });
+
+        setMtBatchProgress((prev) => prev.map((p, idx) => (idx === i ? { ...p, status: 'publishing', titleEnglish: result.titleEnglish, questionCount: result.questions.length } : p)));
+        await saveMockTestToApp({
+          titleEnglish: result.titleEnglish,
+          titleOdia: result.titleOdia,
+          classLevel: mtClassLevel,
+          subjectId: mtSubject,
+          durationMinutes: 30,
+          totalMarks: result.totalMarks,
+          questions: result.questions,
+        });
+
+        setMtBatchProgress((prev) => prev.map((p, idx) => (idx === i ? { ...p, status: 'done' } : p)));
+      } catch (err: any) {
+        setMtBatchProgress((prev) => prev.map((p, idx) => (idx === i ? { ...p, status: 'error', error: err.message || 'Failed' } : p)));
+      }
+    }
+
+    setMtBatchRunning(false);
+    showSuccess('Batch complete! Check the results below for each test.');
   };
 
   const handleSendNotification = (e: React.FormEvent) => {
@@ -174,7 +194,7 @@ export const AdminPanel: React.FC = () => {
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
         {[
           { id: 'analytics', label: 'Analytics Overview', icon: <BarChart2 className="w-4 h-4" /> },
-          { id: 'notes', label: 'Upload Notes', icon: <Upload className="w-4 h-4" /> },
+          { id: 'notes', label: 'Chapter from Textbook PDF', icon: <BookOpen className="w-4 h-4" /> },
           { id: 'pdfs', label: 'AI Mock Test from PDF', icon: <FileText className="w-4 h-4" /> },
           { id: 'questions', label: 'Add Questions', icon: <PlusCircle className="w-4 h-4" /> },
           { id: 'notifications', label: 'Broadcast Push', icon: <Bell className="w-4 h-4" /> },
@@ -237,33 +257,148 @@ export const AdminPanel: React.FC = () => {
           </div>
         )}
 
-        {/* Upload Notes */}
+        {/* Chapter from Textbook PDF */}
         {activeAdminTab === 'notes' && (
-          <form onSubmit={handleUploadNote} className="space-y-4 max-w-lg">
-            <h2 className="font-bold text-base text-slate-900 dark:text-slate-100">
-              Upload New Chapter Notes
-            </h2>
-
+          <div className="space-y-5 max-w-2xl">
             <div>
-              <label className="text-xs font-bold text-slate-500 block mb-1">
-                Chapter Title (English & Odia)
-              </label>
-              <input
-                type="text"
-                value={noteTitle}
-                onChange={(e) => setNoteTitle(e.target.value)}
-                placeholder="e.g. Life Science: Control and Coordination (ନିୟନ୍ତ୍ରଣ o ସମନ୍ୱୟ)"
-                className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 text-xs border border-slate-200 dark:border-slate-700"
-              />
+              <h2 className="font-bold text-base text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-purple-600" />
+                Bulk-Generate All Chapters from Textbook PDFs
+              </h2>
+              <p className="text-xs text-slate-500 mt-1">
+                Download the official BSE Odisha textbook chapter PDFs from{' '}
+                <span className="font-semibold">sme.odisha.gov.in</span>, then select ALL of them at once
+                here (one PDF per chapter). Click one button — the AI reads each one, builds the full
+                chapter, and publishes it live automatically, one after another. No repeating forms.
+              </p>
             </div>
 
-            <button
-              type="submit"
-              className="px-5 py-2.5 rounded-xl bg-purple-600 text-white font-bold text-xs shadow-md"
-            >
-              Publish Chapter Notes
-            </button>
-          </form>
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-500 block mb-1">Class</label>
+                  <select
+                    value={chClassLevel}
+                    onChange={(e) => setChClassLevel(e.target.value as 'Class 9' | 'Class 10')}
+                    disabled={chBatchRunning}
+                    className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 text-xs border border-slate-200 dark:border-slate-700"
+                  >
+                    <option value="Class 9">Class 9</option>
+                    <option value="Class 10">Class 10</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-500 block mb-1">Subject</label>
+                  <select
+                    value={chSubject}
+                    onChange={(e) => setChSubject(e.target.value)}
+                    disabled={chBatchRunning}
+                    className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 text-xs border border-slate-200 dark:border-slate-700"
+                  >
+                    {SUBJECTS.map((s) => (
+                      <option key={s.id} value={s.id}>{s.nameEnglish}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-500 block mb-1">Starts at Chapter #</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={chStartChapterNumber}
+                    onChange={(e) => setChStartChapterNumber(parseInt(e.target.value) || 1)}
+                    disabled={chBatchRunning}
+                    className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 text-xs border border-slate-200 dark:border-slate-700"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-500 block mb-1">
+                  Select ALL Chapter PDFs for This Subject (multi-select)
+                </label>
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  multiple
+                  disabled={chBatchRunning}
+                  onChange={(e) => setChFiles(e.target.files ? Array.from(e.target.files) : [])}
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 text-xs border border-slate-200 dark:border-slate-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-purple-600 file:text-white file:text-xs file:font-bold"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  {chFiles.length > 0
+                    ? `${chFiles.length} file(s) selected — will become chapters ${chStartChapterNumber} to ${chStartChapterNumber + chFiles.length - 1}, in the order you selected them.`
+                    : 'Tip: select files in chapter order (Ctrl/Cmd-click, or select a whole folder at once).'}
+                </p>
+              </div>
+
+              <button
+                onClick={handleRunChapterBatch}
+                disabled={chBatchRunning || chFiles.length === 0}
+                className="px-5 py-2.5 rounded-xl bg-purple-600 text-white font-bold text-xs shadow-md flex items-center gap-2 disabled:opacity-60"
+              >
+                {chBatchRunning ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Processing all chapters — this can take a few minutes...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    <span>Generate & Publish All {chFiles.length || ''} Chapters</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {chBatchProgress.length > 0 && (
+              <div className="space-y-2">
+                {chBatchProgress.map((p, i) => (
+                  <div
+                    key={i}
+                    className={`p-3 rounded-xl border text-xs flex items-center justify-between ${
+                      p.status === 'error'
+                        ? 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800'
+                        : p.status === 'done'
+                        ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800'
+                        : 'bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-700'
+                    }`}
+                  >
+                    <div>
+                      <span className="font-bold text-slate-800 dark:text-slate-200">
+                        {chStartChapterNumber + i}. {p.titleEnglish || p.fileName}
+                      </span>
+                      {p.status === 'error' && (
+                        <p className="text-red-600 dark:text-red-400 mt-0.5">{p.error}</p>
+                      )}
+                    </div>
+                    <span className="font-semibold flex items-center gap-1.5">
+                      {p.status === 'pending' && <span className="text-slate-400">Waiting...</span>}
+                      {p.status === 'generating' && (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-600" />
+                          <span className="text-purple-600">Reading with AI...</span>
+                        </>
+                      )}
+                      {p.status === 'publishing' && (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                          <span className="text-blue-600">Publishing...</span>
+                        </>
+                      )}
+                      {p.status === 'done' && (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span className="text-emerald-600">Live!</span>
+                        </>
+                      )}
+                      {p.status === 'error' && <span className="text-red-600">Failed</span>}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
 
         {/* AI Mock Test from PDF */}
@@ -272,21 +407,22 @@ export const AdminPanel: React.FC = () => {
             <div>
               <h2 className="font-bold text-base text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-purple-600" />
-                Generate Mock Test from a PDF
+                Bulk-Generate Mock Tests from PDFs
               </h2>
               <p className="text-xs text-slate-500 mt-1">
-                Upload a question paper or practice-question PDF. Gemini AI will read it and convert it into
-                a ready mock test (English + Odia, with explanations).
+                Select every question-paper / practice PDF you have at once. Each file becomes its own
+                mock test — generated and published automatically, one after another.
               </p>
             </div>
 
-            <form onSubmit={handleGenerateMockTest} className="space-y-4">
+            <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-slate-500 block mb-1">Class</label>
                   <select
                     value={mtClassLevel}
                     onChange={(e) => setMtClassLevel(e.target.value as 'Class 9' | 'Class 10')}
+                    disabled={mtBatchRunning}
                     className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 text-xs border border-slate-200 dark:border-slate-700"
                   >
                     <option value="Class 9">Class 9</option>
@@ -298,6 +434,7 @@ export const AdminPanel: React.FC = () => {
                   <select
                     value={mtSubject}
                     onChange={(e) => setMtSubject(e.target.value)}
+                    disabled={mtBatchRunning}
                     className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 text-xs border border-slate-200 dark:border-slate-700"
                   >
                     {SUBJECTS.map((s) => (
@@ -308,105 +445,87 @@ export const AdminPanel: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-500 block mb-1">Mock Test Title (English)</label>
-                <input
-                  type="text"
-                  value={mtTitleEnglish}
-                  onChange={(e) => setMtTitleEnglish(e.target.value)}
-                  placeholder="e.g. Class 10 English Half-Yearly Practice Set"
-                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 text-xs border border-slate-200 dark:border-slate-700"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-500 block mb-1">Mock Test Title (Odia) — optional</label>
-                <input
-                  type="text"
-                  value={mtTitleOdia}
-                  onChange={(e) => setMtTitleOdia(e.target.value)}
-                  placeholder="e.g. ଦଶମ ଶ୍ରେଣୀ ଇଂରାଜୀ ଅଭ୍ୟାସ ପ୍ରଶ୍ନପତ୍ର"
-                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 text-xs border border-slate-200 dark:border-slate-700"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-500 block mb-1">Upload PDF</label>
+                <label className="text-xs font-bold text-slate-500 block mb-1">Select ALL Test-Paper PDFs (multi-select)</label>
                 <input
                   type="file"
                   accept="application/pdf"
-                  onChange={(e) => setMtFile(e.target.files ? e.target.files[0] : null)}
+                  multiple
+                  disabled={mtBatchRunning}
+                  onChange={(e) => setMtFiles(e.target.files ? Array.from(e.target.files) : [])}
                   className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 text-xs border border-slate-200 dark:border-slate-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-purple-600 file:text-white file:text-xs file:font-bold"
                 />
-                <p className="text-[10px] text-slate-400 mt-1">Text-based PDFs work best (not scanned photo PDFs).</p>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  {mtFiles.length > 0 ? `${mtFiles.length} file(s) selected — each becomes its own mock test.` : 'Text-based PDFs work best (not scanned photos).'}
+                </p>
               </div>
 
-              {mtError && (
-                <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300 font-semibold">
-                  {mtError}
-                </div>
-              )}
-
               <button
-                type="submit"
-                disabled={mtLoading}
+                onClick={handleRunMockTestBatch}
+                disabled={mtBatchRunning || mtFiles.length === 0}
                 className="px-5 py-2.5 rounded-xl bg-purple-600 text-white font-bold text-xs shadow-md flex items-center gap-2 disabled:opacity-60"
               >
-                {mtLoading ? (
+                {mtBatchRunning ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Reading PDF & generating questions...</span>
+                    <span>Processing all tests — this can take a few minutes...</span>
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4" />
-                    <span>Generate Mock Test with AI</span>
+                    <span>Generate & Publish All {mtFiles.length || ''} Mock Tests</span>
                   </>
                 )}
               </button>
-            </form>
+            </div>
 
-            {mtResult && (
-              <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-bold text-sm text-emerald-800 dark:text-emerald-300">{mtResult.titleEnglish}</h3>
-                    <p className="text-xs text-emerald-700 dark:text-emerald-400">{mtResult.questions.length} questions generated</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={handleSaveToApp}
-                      disabled={mtSaving || mtSaved}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 text-white text-xs font-bold disabled:opacity-60"
-                    >
-                      {mtSaving ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <Sparkles className="w-3.5 h-3.5" />
+            {mtBatchProgress.length > 0 && (
+              <div className="space-y-2">
+                {mtBatchProgress.map((p, i) => (
+                  <div
+                    key={i}
+                    className={`p-3 rounded-xl border text-xs flex items-center justify-between ${
+                      p.status === 'error'
+                        ? 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800'
+                        : p.status === 'done'
+                        ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800'
+                        : 'bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-700'
+                    }`}
+                  >
+                    <div>
+                      <span className="font-bold text-slate-800 dark:text-slate-200">
+                        {p.titleEnglish || p.fileName}
+                      </span>
+                      {p.questionCount !== undefined && (
+                        <span className="text-slate-500"> — {p.questionCount} questions</span>
                       )}
-                      {mtSaved ? 'Saved Live ✓' : 'Save Live to App'}
-                    </button>
-                    <button
-                      onClick={handleDownloadJson}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      Download JSON
-                    </button>
-                  </div>
-                </div>
-
-                <div className="max-h-72 overflow-y-auto space-y-2 pr-1">
-                  {mtResult.questions.map((q, i) => (
-                    <div key={q.id} className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs">
-                      <p className="font-semibold text-slate-800 dark:text-slate-200">{i + 1}. {q.questionEnglish}</p>
-                      <p className="text-slate-500 mt-0.5">{q.questionOdia}</p>
+                      {p.status === 'error' && (
+                        <p className="text-red-600 dark:text-red-400 mt-0.5">{p.error}</p>
+                      )}
                     </div>
-                  ))}
-                </div>
-
-                <p className="text-[10px] text-emerald-700 dark:text-emerald-400">
-                  Click "Save Live to App" to publish instantly, or download the JSON as a backup.
-                </p>
+                    <span className="font-semibold flex items-center gap-1.5">
+                      {p.status === 'pending' && <span className="text-slate-400">Waiting...</span>}
+                      {p.status === 'generating' && (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-600" />
+                          <span className="text-purple-600">Reading with AI...</span>
+                        </>
+                      )}
+                      {p.status === 'publishing' && (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                          <span className="text-blue-600">Publishing...</span>
+                        </>
+                      )}
+                      {p.status === 'done' && (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span className="text-emerald-600">Live!</span>
+                        </>
+                      )}
+                      {p.status === 'error' && <span className="text-red-600">Failed</span>}
+                    </span>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -466,3 +585,4 @@ export const AdminPanel: React.FC = () => {
     </div>
   );
 };
+
