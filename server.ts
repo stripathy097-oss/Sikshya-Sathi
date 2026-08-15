@@ -135,6 +135,386 @@ app.get('/api/leaderboard', async (req, res) => {
 });
 
 /**
+ * Save an admin-generated (or admin-edited) chapter permanently to Firestore.
+ */
+app.post('/api/chapters', async (req, res) => {
+  try {
+    if (!db) {
+      return res.status(503).json({ error: 'Database not configured yet.' });
+    }
+    const chapter = req.body;
+    if (!chapter || !chapter.titleEnglish) {
+      return res.status(400).json({ error: 'Invalid chapter data.' });
+    }
+    const id = chapter.id || `chap_${Date.now()}`;
+    await db.collection('chapters').doc(id).set({ ...chapter, id, createdAt: Date.now() });
+    res.json({ status: 'success', id });
+  } catch (error: any) {
+    console.error('Error saving chapter:', error);
+    res.status(500).json({ error: 'Failed to save chapter.', details: error.message || String(error) });
+  }
+});
+
+/**
+ * Fetch all chapters that have been added by admins via the textbook-PDF importer.
+ */
+app.get('/api/chapters', async (req, res) => {
+  try {
+    if (!db) {
+      return res.json({ chapters: [] });
+    }
+    const snapshot = await db.collection('chapters').orderBy('createdAt', 'desc').get();
+    const chapters = snapshot.docs.map((doc) => doc.data());
+    res.json({ chapters });
+  } catch (error: any) {
+    console.error('Error fetching chapters:', error);
+    res.status(500).json({ error: 'Failed to fetch chapters.', details: error.message || String(error) });
+  }
+});
+
+/**
+ * Admin: Convert pages from the ACTUAL official BSE Odisha textbook (uploaded as a PDF)
+ * into a structured chapter (summary, explanation, key words, Q&A) for the app.
+ * The AI is instructed to use ONLY the content present in the uploaded PDF — this keeps
+ * the app's content faithful to the real textbook rather than the model's general memory.
+ */
+/**
+ * Shared logic: turn raw textbook chapter text into a structured Chapter object using Gemini.
+ * Used by both /api/admin/chapter-from-pdf (single PDF upload) and the whole-book split flow.
+ */
+async function generateChapterFromText(
+  extractedText: string,
+  classLevel: string,
+  subjectId: string,
+  chapterNumber: number,
+  titleEnglish?: string,
+  titleOdia?: string
+): Promise<{ chapter?: any; error?: string }> {
+  const systemInstruction = `
+You are a BSE Odisha (Board of Secondary Education, Odisha) textbook content editor building study
+material for a student app. You will be given the raw text of one chapter, extracted directly from
+the OFFICIAL BSE Odisha textbook PDF.
+
+CRITICAL — TEXTBOOK FIDELITY RULES:
+- Base everything ONLY on the provided textbook text. Do not add outside facts, examples, or
+  information that is not present in or directly implied by the source text.
+- The summary and explanation should faithfully represent what the chapter actually says, in
+  your own clear words (do not copy long verbatim sentences — paraphrase for a study-guide style).
+- If the source text is a poem/story, follow its actual structure/stanzas/paragraphs in order.
+- Provide both English and Odia for every text field.
+- Write clean final text only — no reasoning, notes-to-self, or placeholder/status phrases, and
+  never output ALL_CAPS_WITH_UNDERSCORES tokens.
+- Questions (short/long/PYQ-style/fill-in-blank/true-false/match-the-following) must be answerable
+  from the source text only.
+    `;
+
+  const prompt = `Class Level: ${classLevel || 'Class 10'}\nSubject: ${subjectId || 'General'}\nChapter Number: ${chapterNumber || 1}\n${titleEnglish ? `Chapter Title (English, if known): ${titleEnglish}\n` : ''}${titleOdia ? `Chapter Title (Odia, if known): ${titleOdia}\n` : ''}\nOfficial textbook chapter text (extracted from PDF):\n"""\n${extractedText.slice(0, 20000)}\n"""\n\nBuild the full structured chapter as per the instructions, grounded only in this text.`;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-3.6-flash',
+    contents: prompt,
+    config: {
+      systemInstruction,
+      temperature: 0.3,
+      maxOutputTokens: 8192,
+      responseMimeType: 'application/json',
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          titleEnglish: { type: Type.STRING },
+          titleOdia: { type: Type.STRING },
+          summaryEnglish: { type: Type.STRING },
+          summaryOdia: { type: Type.STRING },
+          learningObjectives: { type: Type.ARRAY, items: { type: Type.STRING } },
+          lineByLineExplanation: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                paragraphNo: { type: Type.NUMBER },
+                textEnglish: { type: Type.STRING },
+                textOdia: { type: Type.STRING },
+                keyNote: { type: Type.STRING },
+              },
+            },
+          },
+          keyWords: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                word: { type: Type.STRING },
+                meaningEnglish: { type: Type.STRING },
+                meaningOdia: { type: Type.STRING },
+              },
+            },
+          },
+          shortQuestions: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                qEnglish: { type: Type.STRING },
+                qOdia: { type: Type.STRING },
+                answerEnglish: { type: Type.STRING },
+                answerOdia: { type: Type.STRING },
+                marks: { type: Type.NUMBER },
+              },
+            },
+          },
+          longQuestions: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                qEnglish: { type: Type.STRING },
+                qOdia: { type: Type.STRING },
+                answerEnglish: { type: Type.STRING },
+                answerOdia: { type: Type.STRING },
+                marks: { type: Type.NUMBER },
+              },
+            },
+          },
+          fillInBlanks: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: { question: { type: Type.STRING }, answer: { type: Type.STRING } },
+            },
+          },
+          trueFalse: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                statement: { type: Type.STRING },
+                isTrue: { type: Type.BOOLEAN },
+                explanation: { type: Type.STRING },
+              },
+            },
+          },
+          matchFollowing: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: { left: { type: Type.STRING }, right: { type: Type.STRING } },
+            },
+          },
+          examTips: { type: Type.ARRAY, items: { type: Type.STRING } },
+        },
+      },
+    },
+  });
+
+  const jsonText = response.text || '{}';
+  let parsedData: any;
+  try {
+    parsedData = JSON.parse(jsonText);
+  } catch {
+    console.error('[generateChapterFromText] JSON parse failed (likely truncated AI response). Length:', jsonText.length);
+    return { error: 'The AI response was too long and got cut off. Try a shorter chapter or a smaller PDF.' };
+  }
+
+  const sanitizeText = (raw: any): string => {
+    if (typeof raw !== 'string') return '';
+    return raw.replace(/\b[A-Z0-9]+(?:_[A-Z0-9]+){2,}\b/g, '').replace(/\s{2,}/g, ' ').trim();
+  };
+
+  const ts = Date.now();
+  const chapter = {
+    id: `chap_${ts}`,
+    classLevel: classLevel || 'Class 10',
+    subjectId: subjectId || 'english',
+    chapterNumber: chapterNumber || 1,
+    titleEnglish: sanitizeText(parsedData.titleEnglish) || titleEnglish || 'Untitled Chapter',
+    titleOdia: sanitizeText(parsedData.titleOdia) || titleOdia || '',
+    summaryEnglish: sanitizeText(parsedData.summaryEnglish),
+    summaryOdia: sanitizeText(parsedData.summaryOdia),
+    learningObjectives: (parsedData.learningObjectives || []).map(sanitizeText).filter(Boolean),
+    lineByLineExplanation: (parsedData.lineByLineExplanation || []).map((l: any, i: number) => ({
+      paragraphNo: l.paragraphNo || i + 1,
+      textEnglish: sanitizeText(l.textEnglish),
+      textOdia: sanitizeText(l.textOdia),
+      keyNote: sanitizeText(l.keyNote),
+    })),
+    keyWords: (parsedData.keyWords || []).map((k: any) => ({
+      word: sanitizeText(k.word),
+      meaningEnglish: sanitizeText(k.meaningEnglish),
+      meaningOdia: sanitizeText(k.meaningOdia),
+    })),
+    shortQuestions: (parsedData.shortQuestions || []).map((q: any, i: number) => ({
+      id: `sq_${ts}_${i}`,
+      qEnglish: sanitizeText(q.qEnglish),
+      qOdia: sanitizeText(q.qOdia),
+      answerEnglish: sanitizeText(q.answerEnglish),
+      answerOdia: sanitizeText(q.answerOdia),
+      marks: typeof q.marks === 'number' ? q.marks : 2,
+    })),
+    longQuestions: (parsedData.longQuestions || []).map((q: any, i: number) => ({
+      id: `lq_${ts}_${i}`,
+      qEnglish: sanitizeText(q.qEnglish),
+      qOdia: sanitizeText(q.qOdia),
+      answerEnglish: sanitizeText(q.answerEnglish),
+      answerOdia: sanitizeText(q.answerOdia),
+      marks: typeof q.marks === 'number' ? q.marks : 5,
+    })),
+    fillInBlanks: (parsedData.fillInBlanks || []).map((f: any, i: number) => ({
+      id: `fib_${ts}_${i}`,
+      question: sanitizeText(f.question),
+      answer: sanitizeText(f.answer),
+    })),
+    trueFalse: (parsedData.trueFalse || []).map((t: any, i: number) => ({
+      id: `tf_${ts}_${i}`,
+      statement: sanitizeText(t.statement),
+      isTrue: !!t.isTrue,
+      explanation: sanitizeText(t.explanation),
+    })),
+    matchFollowing: (parsedData.matchFollowing || []).map((m: any) => ({
+      left: sanitizeText(m.left),
+      right: sanitizeText(m.right),
+    })),
+    examTips: (parsedData.examTips || []).map(sanitizeText).filter(Boolean),
+    isPremium: false,
+  };
+
+  if (!chapter.summaryEnglish || chapter.keyWords.length === 0) {
+    return { error: 'The AI could not extract clean chapter content from this text. Please check the source PDF has readable text.' };
+  }
+
+  return { chapter };
+}
+
+/**
+ * Admin: Convert ONE chapter's PDF (or raw text, e.g. from the whole-book splitter) into a
+ * structured chapter for the app.
+ */
+app.post('/api/admin/chapter-from-pdf', async (req, res) => {
+  try {
+    const { pdfBase64, rawText, classLevel, subjectId, chapterNumber, titleEnglish, titleOdia } = req.body;
+
+    let extractedText = rawText || '';
+    if (!extractedText && pdfBase64) {
+      const cleanBase64 = pdfBase64.replace(/^data:application\/pdf;base64,/, '');
+      const pdfBuffer = Buffer.from(cleanBase64, 'base64');
+      const parsed = await pdfParse(pdfBuffer);
+      extractedText = (parsed.text || '').trim();
+    }
+
+    if (!extractedText) {
+      return res.status(400).json({ error: 'Please upload a PDF file, or provide chapter text (from the whole-book splitter).' });
+    }
+
+    const { chapter, error } = await generateChapterFromText(extractedText, classLevel, subjectId, chapterNumber, titleEnglish, titleOdia);
+    if (error || !chapter) {
+      return res.status(422).json({ error });
+    }
+
+    res.json({ status: 'success', chapter });
+  } catch (error: any) {
+    console.error('Error in /api/admin/chapter-from-pdf:', error);
+    res.status(500).json({
+      error: 'Failed to convert PDF into a chapter.',
+      details: error.message || String(error),
+    });
+  }
+});
+
+/**
+ * Admin: Upload the ENTIRE textbook (whole subject, one PDF) and have the AI detect where each
+ * chapter starts, then split the raw text accordingly. This does NOT generate full chapter
+ * content yet (that would be too much output for one request) — it just returns each chapter's
+ * title + its own slice of raw text, ready to be sent one-by-one to /api/admin/chapter-from-pdf
+ * (using `rawText` instead of a PDF) for full generation + publishing.
+ */
+app.post('/api/admin/split-book', async (req, res) => {
+  try {
+    const { pdfBase64 } = req.body;
+    if (!pdfBase64) {
+      return res.status(400).json({ error: 'Please upload the whole-book PDF.' });
+    }
+
+    const cleanBase64 = pdfBase64.replace(/^data:application\/pdf;base64,/, '');
+    const pdfBuffer = Buffer.from(cleanBase64, 'base64');
+    const parsed = await pdfParse(pdfBuffer);
+    const fullText = (parsed.text || '').trim();
+
+    if (!fullText) {
+      return res.status(400).json({ error: 'Could not read any text from this PDF. Please upload a text-based PDF (not scanned photos).' });
+    }
+
+    // Ask the AI only to locate chapter boundaries (cheap, small output) — not to generate content.
+    const systemInstruction = `
+You are given the full raw text of a school textbook (multiple chapters). Identify where each
+chapter begins. For EVERY chapter, in order, return:
+- chapterNumber (1, 2, 3... in the order chapters appear)
+- titleEnglish and titleOdia (the chapter's title as printed in the book)
+- startSnippet: the EXACT first 8-12 words of that chapter's body text, copied character-for-character
+  from the source (used to locate it programmatically — do not paraphrase this field).
+Ignore front matter like table of contents, preface, or index. Only include real chapters.
+    `;
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.6-flash',
+      contents: `Full textbook text:\n"""\n${fullText.slice(0, 100000)}\n"""\n\nList every chapter with its exact starting words.`,
+      config: {
+        systemInstruction,
+        temperature: 0.1,
+        maxOutputTokens: 4096,
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            chapters: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  chapterNumber: { type: Type.NUMBER },
+                  titleEnglish: { type: Type.STRING },
+                  titleOdia: { type: Type.STRING },
+                  startSnippet: { type: Type.STRING },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    let boundaries: any[] = [];
+    try {
+      boundaries = JSON.parse(response.text || '{}').chapters || [];
+    } catch {
+      return res.status(422).json({ error: 'Could not detect chapters in this PDF. Try uploading smaller sections instead.' });
+    }
+
+    // Locate each chapter's starting index in the full text, and slice out its raw text.
+    const found = boundaries
+      .map((b) => ({ ...b, startIdx: b.startSnippet ? fullText.indexOf(b.startSnippet.slice(0, 60)) : -1 }))
+      .filter((b) => b.startIdx !== -1)
+      .sort((a, b) => a.startIdx - b.startIdx);
+
+    if (found.length === 0) {
+      return res.status(422).json({ error: 'Could not locate any chapter boundaries in this PDF. Please try splitting it manually into smaller PDFs instead.' });
+    }
+
+    const chapters = found.map((b, i) => {
+      const endIdx = i + 1 < found.length ? found[i + 1].startIdx : fullText.length;
+      return {
+        chapterNumber: b.chapterNumber || i + 1,
+        titleEnglish: b.titleEnglish || `Chapter ${i + 1}`,
+        titleOdia: b.titleOdia || '',
+        rawText: fullText.slice(b.startIdx, endIdx).trim(),
+      };
+    });
+
+    res.json({ status: 'success', chapters });
+  } catch (error: any) {
+    console.error('Error in /api/admin/split-book:', error);
+    res.status(500).json({ error: 'Failed to split the book into chapters.', details: error.message || String(error) });
+  }
+});
+
+/**
  * AI Doubt Solver API Route
  * Tailored for Odisha Board (BSE Odisha) Class 9 & 10 Students
  */
