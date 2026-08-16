@@ -188,7 +188,8 @@ async function generateChapterFromText(
   subjectId: string,
   chapterNumber: number,
   titleEnglish?: string,
-  titleOdia?: string
+  titleOdia?: string,
+  compact: boolean = false
 ): Promise<{ chapter?: any; error?: string }> {
   const systemInstruction = `
 You are a BSE Odisha (Board of Secondary Education, Odisha) textbook content editor building study
@@ -206,9 +207,22 @@ CRITICAL — TEXTBOOK FIDELITY RULES:
   never output ALL_CAPS_WITH_UNDERSCORES tokens.
 - Questions (short/long/PYQ-style/fill-in-blank/true-false/match-the-following) must be answerable
   from the source text only.
+
+OUTPUT LENGTH LIMITS (follow strictly, so the response never gets cut off):
+${compact ? `- lineByLineExplanation: at most 4 entries. keyWords: at most 6.
+- shortQuestions: at most 3. longQuestions: at most 2.
+- fillInBlanks: at most 3. trueFalse: at most 3. matchFollowing: at most 3.
+- examTips: at most 3.
+- Keep every text field to 1-2 short sentences maximum. Be as concise as possible.` : `- lineByLineExplanation: at most 8 entries, each 1-2 sentences per language.
+- keyWords: at most 10.
+- shortQuestions: at most 5. longQuestions: at most 3.
+- fillInBlanks: at most 5. trueFalse: at most 5. matchFollowing: at most 5.
+- examTips: at most 4.
+- Keep every individual text field to 2-3 sentences maximum — this is a mobile study app,
+  not a full essay.`}
     `;
 
-  const prompt = `Class Level: ${classLevel || 'Class 10'}\nSubject: ${subjectId || 'General'}\nChapter Number: ${chapterNumber || 1}\n${titleEnglish ? `Chapter Title (English, if known): ${titleEnglish}\n` : ''}${titleOdia ? `Chapter Title (Odia, if known): ${titleOdia}\n` : ''}\nOfficial textbook chapter text (extracted from PDF):\n"""\n${extractedText.slice(0, 20000)}\n"""\n\nBuild the full structured chapter as per the instructions, grounded only in this text.`;
+  const prompt = `Class Level: ${classLevel || 'Class 10'}\nSubject: ${subjectId || 'General'}\nChapter Number: ${chapterNumber || 1}\n${titleEnglish ? `Chapter Title (English, if known): ${titleEnglish}\n` : ''}${titleOdia ? `Chapter Title (Odia, if known): ${titleOdia}\n` : ''}\nOfficial textbook chapter text (extracted from PDF):\n"""\n${extractedText.slice(0, compact ? 10000 : 16000)}\n"""\n\nBuild the full structured chapter as per the instructions, grounded only in this text. Stay within the output length limits.`;
 
   const response = await ai.models.generateContent({
     model: 'gemini-3.6-flash',
@@ -216,7 +230,7 @@ CRITICAL — TEXTBOOK FIDELITY RULES:
     config: {
       systemInstruction,
       temperature: 0.3,
-      maxOutputTokens: 8192,
+      maxOutputTokens: 16384,
       responseMimeType: 'application/json',
       responseSchema: {
         type: Type.OBJECT,
@@ -404,7 +418,11 @@ app.post('/api/admin/chapter-from-pdf', async (req, res) => {
       return res.status(400).json({ error: 'Please upload a PDF file, or provide chapter text (from the whole-book splitter).' });
     }
 
-    const { chapter, error } = await generateChapterFromText(extractedText, classLevel, subjectId, chapterNumber, titleEnglish, titleOdia);
+    let { chapter, error } = await generateChapterFromText(extractedText, classLevel, subjectId, chapterNumber, titleEnglish, titleOdia);
+    if (error && !chapter) {
+      console.log('[chapter-from-pdf] First attempt failed, retrying in compact mode:', error);
+      ({ chapter, error } = await generateChapterFromText(extractedText, classLevel, subjectId, chapterNumber, titleEnglish, titleOdia, true));
+    }
     if (error || !chapter) {
       return res.status(422).json({ error });
     }
