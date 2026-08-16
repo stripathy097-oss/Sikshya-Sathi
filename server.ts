@@ -391,8 +391,8 @@ ${compact ? `- lineByLineExplanation: at most 4 entries. keyWords: at most 6.
     isPremium: false,
   };
 
-  if (!chapter.summaryEnglish || chapter.keyWords.length === 0) {
-    return { error: 'The AI could not extract clean chapter content from this text. Please check the source PDF has readable text.' };
+  if (!chapter.summaryEnglish) {
+    return { error: 'The AI could not extract a summary from this text. Please check the source PDF has readable text.' };
   }
 
   return { chapter };
@@ -424,7 +424,10 @@ app.post('/api/admin/chapter-from-pdf', async (req, res) => {
       ({ chapter, error } = await generateChapterFromText(extractedText, classLevel, subjectId, chapterNumber, titleEnglish, titleOdia, true));
     }
     if (error || !chapter) {
-      return res.status(422).json({ error });
+      console.error('[chapter-from-pdf] Failed after retry. Source text length:', extractedText.length, 'Preview:', extractedText.slice(0, 200));
+      return res.status(422).json({
+        error: `${error} (Source text was ${extractedText.length} characters — preview: "${extractedText.slice(0, 120).replace(/\s+/g, ' ')}...")`,
+      });
     }
 
     res.json({ status: 'success', chapter });
@@ -515,15 +518,23 @@ Ignore front matter like table of contents, preface, or index. Only include real
       return res.status(422).json({ error: 'Could not locate any chapter boundaries in this PDF. Please try splitting it manually into smaller PDFs instead.' });
     }
 
-    const chapters = found.map((b, i) => {
-      const endIdx = i + 1 < found.length ? found[i + 1].startIdx : fullText.length;
-      return {
-        chapterNumber: b.chapterNumber || i + 1,
-        titleEnglish: b.titleEnglish || `Chapter ${i + 1}`,
-        titleOdia: b.titleOdia || '',
-        rawText: fullText.slice(b.startIdx, endIdx).trim(),
-      };
-    });
+    const chapters = found
+      .map((b, i) => {
+        const endIdx = i + 1 < found.length ? found[i + 1].startIdx : fullText.length;
+        return {
+          chapterNumber: b.chapterNumber || i + 1,
+          titleEnglish: b.titleEnglish || `Chapter ${i + 1}`,
+          titleOdia: b.titleOdia || '',
+          rawText: fullText.slice(b.startIdx, endIdx).trim(),
+        };
+      })
+      // A chapter slice under ~40 characters usually means two boundaries were detected too
+      // close together (a false match) — better to skip it than send near-empty text to the AI.
+      .filter((c) => c.rawText.length >= 40);
+
+    if (chapters.length === 0) {
+      return res.status(422).json({ error: 'Chapters were detected but their text came out too short/garbled. Please try splitting this PDF manually instead.' });
+    }
 
     res.json({ status: 'success', chapters });
   } catch (error: any) {
