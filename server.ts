@@ -508,24 +508,48 @@ Ignore front matter like table of contents, preface, or index. Only include real
       return res.status(422).json({ error: 'Could not detect chapters in this PDF. Try uploading smaller sections instead.' });
     }
 
-    // Locate each chapter's starting index in the full text, and slice out its raw text.
+    // PDF-extracted text often has irregular line breaks/spacing compared to how the AI
+    // "reads" it, so exact substring matching on raw text frequently fails. Normalize all
+    // whitespace to single spaces (in both the source and the snippets) before matching —
+    // formatting doesn't matter for the AI generation step that follows anyway.
+    const normalize = (s: string) => s.replace(/\s+/g, ' ').trim();
+    const normalizedText = normalize(fullText);
+
+    const locateSnippet = (snippet: string): number => {
+      if (!snippet) return -1;
+      const normSnippet = normalize(snippet);
+      // Try progressively shorter prefixes so minor extraction mismatches still find a match.
+      for (const len of [80, 50, 30, 18, 10]) {
+        const attempt = normSnippet.slice(0, len);
+        if (attempt.length < 6) continue;
+        const idx = normalizedText.toLowerCase().indexOf(attempt.toLowerCase());
+        if (idx !== -1) return idx;
+      }
+      return -1;
+    };
+
+    // Locate each chapter's starting index in the normalized full text.
     const found = boundaries
-      .map((b) => ({ ...b, startIdx: b.startSnippet ? fullText.indexOf(b.startSnippet.slice(0, 60)) : -1 }))
+      .map((b) => ({ ...b, startIdx: locateSnippet(b.startSnippet) }))
       .filter((b) => b.startIdx !== -1)
       .sort((a, b) => a.startIdx - b.startIdx);
 
     if (found.length === 0) {
-      return res.status(422).json({ error: 'Could not locate any chapter boundaries in this PDF. Please try splitting it manually into smaller PDFs instead.' });
+      console.error('[split-book] No boundaries matched. Detected titles:', boundaries.map((b: any) => b.titleEnglish).join(', '));
+      console.error('[split-book] Text preview:', normalizedText.slice(0, 300));
+      return res.status(422).json({
+        error: `Could not locate any chapter boundaries in this PDF's text. Detected chapter titles were: ${boundaries.map((b: any) => b.titleEnglish).join(', ') || 'none'}. This usually means the PDF's text extraction is garbled (common with scanned/photo PDFs or complex multi-column layouts) — please check if you can select/copy text directly in this PDF.`,
+      });
     }
 
     const chapters = found
       .map((b, i) => {
-        const endIdx = i + 1 < found.length ? found[i + 1].startIdx : fullText.length;
+        const endIdx = i + 1 < found.length ? found[i + 1].startIdx : normalizedText.length;
         return {
           chapterNumber: b.chapterNumber || i + 1,
           titleEnglish: b.titleEnglish || `Chapter ${i + 1}`,
           titleOdia: b.titleOdia || '',
-          rawText: fullText.slice(b.startIdx, endIdx).trim(),
+          rawText: normalizedText.slice(b.startIdx, endIdx).trim(),
         };
       })
       // A chapter slice under ~40 characters usually means two boundaries were detected too
