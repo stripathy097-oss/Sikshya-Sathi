@@ -1,4 +1,14 @@
 import { AIDoubtRequest, AIDoubtResponse, AIPlannerRequest, AIPlannerResponse, Flashcard, AIFlashcardsRequest, AIMockTestImportRequest, AIMockTestImportResponse } from '../types';
+import { auth } from '../firebaseClient';
+
+/** Attaches the logged-in admin's Firebase ID token so the server can verify who's calling. */
+async function adminHeaders(): Promise<HeadersInit> {
+  const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
 
 export async function solveDoubtWithAI(req: AIDoubtRequest): Promise<AIDoubtResponse> {
   try {
@@ -98,9 +108,7 @@ export async function generateMockTestFromPdf(req: AIMockTestImportRequest): Pro
   try {
     const res = await fetch('/api/admin/mocktest-from-pdf', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: await adminHeaders(),
       body: JSON.stringify(req),
     });
 
@@ -133,7 +141,7 @@ export async function saveMockTestToApp(mockTest: {
 }): Promise<{ status: string; id: string }> {
   const res = await fetch('/api/mocktests', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await adminHeaders(),
     body: JSON.stringify(mockTest),
   });
   if (!res.ok) {
@@ -189,7 +197,7 @@ export async function generateChapterFromPdf(req: {
 }): Promise<any> {
   const res = await fetch('/api/admin/chapter-from-pdf', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await adminHeaders(),
     body: JSON.stringify(req),
   });
   if (!res.ok) {
@@ -203,7 +211,7 @@ export async function generateChapterFromPdf(req: {
 export async function saveChapterToApp(chapter: any): Promise<void> {
   const res = await fetch('/api/chapters', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await adminHeaders(),
     body: JSON.stringify(chapter),
   });
   if (!res.ok) {
@@ -228,7 +236,7 @@ export async function splitBookIntoChapters(pdfBase64: string): Promise<
 > {
   const res = await fetch('/api/admin/split-book', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await adminHeaders(),
     body: JSON.stringify({ pdfBase64 }),
   });
   if (!res.ok) {
@@ -249,7 +257,7 @@ export async function generateChapterFromRawText(req: {
 }): Promise<any> {
   const res = await fetch('/api/admin/chapter-from-pdf', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await adminHeaders(),
     body: JSON.stringify(req),
   });
   if (!res.ok) {
