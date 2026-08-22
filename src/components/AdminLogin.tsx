@@ -4,7 +4,7 @@ import { Shield, Loader2, ArrowLeft } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export const AdminLogin: React.FC = () => {
-  const { login } = useAuth();
+  const { login, authConfigured } = useAuth();
   const { setActiveTab } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,6 +23,27 @@ export const AdminLogin: React.FC = () => {
       setLoading(false);
     }
   };
+
+  if (!authConfigured) {
+    return (
+      <div className="max-w-sm mx-auto mt-16 px-4">
+        <button
+          onClick={() => setActiveTab('home')}
+          className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 mb-6"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back to app
+        </button>
+        <div className="bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 rounded-2xl p-6 shadow-sm text-center space-y-2">
+          <Shield className="w-8 h-8 mx-auto text-amber-500" />
+          <h1 className="font-bold text-base text-slate-900 dark:text-slate-100">Admin Login Not Set Up Yet</h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            The VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN and VITE_FIREBASE_PROJECT_ID
+            environment variables need to be added on Render before admin login will work.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-sm mx-auto mt-16 px-4">

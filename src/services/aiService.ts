@@ -3,7 +3,7 @@ import { auth } from '../firebaseClient';
 
 /** Attaches the logged-in admin's Firebase ID token so the server can verify who's calling. */
 async function adminHeaders(): Promise<HeadersInit> {
-  const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+  const token = auth && auth.currentUser ? await auth.currentUser.getIdToken() : null;
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
