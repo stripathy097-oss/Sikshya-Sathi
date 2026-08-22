@@ -1,0 +1,14 @@
+rules_version = '2';
+
+// Sikshya Sathi does not use the Firebase client SDK anywhere in the app — every read and
+// write goes through our own Express server, which uses the Firebase ADMIN SDK (a separate,
+// privileged credential that always bypasses these rules). These rules exist purely as a
+// defense-in-depth safety net: if anyone ever tried to read/write this database directly
+// from a browser (e.g. using a leaked client config), they would be blocked here too.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
