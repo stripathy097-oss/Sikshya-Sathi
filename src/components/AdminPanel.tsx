@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import { ODISHA_DISTRICTS, SUBJECTS } from '../data/odishaData';
 import { generateMockTestFromPdf, saveMockTestToApp, generateChapterFromPdf, saveChapterToApp, splitBookIntoChapters, generateChapterFromRawText } from '../services/aiService';
 import { QuizQuestion } from '../types';
@@ -18,10 +19,12 @@ import {
   Loader2,
   Download,
   BookOpen,
+  LogOut,
 } from 'lucide-react';
 
 export const AdminPanel: React.FC = () => {
   const { setActiveTab, notifications } = useApp();
+  const { logout } = useAuth();
 
   const [activeAdminTab, setActiveAdminTab] = useState<
     'analytics' | 'notes' | 'pdfs' | 'questions' | 'notifications' | 'users'
@@ -232,13 +235,22 @@ export const AdminPanel: React.FC = () => {
           </div>
         </div>
 
-        <button
-          onClick={() => setActiveTab('home')}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-white transition-all"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Exit Admin</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setActiveTab('home')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-white transition-all"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Exit Admin</span>
+          </button>
+          <button
+            onClick={() => logout()}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-white transition-all"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Logout</span>
+          </button>
+        </div>
       </div>
 
       {/* Success Banner */}
