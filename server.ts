@@ -5,6 +5,7 @@ import { GoogleGenAI, Type } from '@google/genai';
 import pdfParse from 'pdf-parse';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
+import { getAuth } from 'firebase-admin/auth';
 
 dotenv.config();
 
@@ -23,9 +24,10 @@ const ai = new GoogleGenAI({
   },
 });
 
-// Initialize Firebase Admin (Firestore) for persistent storage of admin-uploaded content.
+// Initialize Firebase Admin (Firestore + Auth) for persistent storage and admin login.
 // Expects FIREBASE_SERVICE_ACCOUNT env var to contain the full service-account JSON (as a string).
 let db: Firestore | null = null;
+let firebaseReady = false;
 try {
   if (process.env.FIREBASE_SERVICE_ACCOUNT) {
     const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -35,6 +37,7 @@ try {
       });
     }
     db = getFirestore();
+    firebaseReady = true;
     console.log('✅ Firebase Firestore connected.');
   } else {
     console.warn('⚠️  FIREBASE_SERVICE_ACCOUNT not set — admin-uploaded content will not be saved permanently.');
@@ -43,15 +46,55 @@ try {
   console.error('❌ Failed to initialize Firebase Admin:', err);
 }
 
+/**
+ * SECURITY: Real (server-side) admin authorization.
+ *
+ * Every admin-only route below is wrapped with this middleware. It does NOT trust anything
+ * the client claims about itself — it takes the Firebase ID token from the Authorization
+ * header, asks Google to verify it's genuine and unexpired, and only then checks whether the
+ * verified email matches the one authorized admin account (set via the ADMIN_EMAIL env var).
+ * A frontend-only "isAdmin" flag can always be faked by editing browser code — this cannot,
+ * because the token is cryptographically signed by Firebase and checked here on the server.
+ */
+async function requireAdmin(req: express.Request, res: express.Response, next: express.NextFunction) {
+  try {
+    if (!firebaseReady) {
+      return res.status(503).json({ error: 'Admin login is not configured on the server yet.' });
+    }
+    const authHeader = req.headers.authorization || '';
+    const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    if (!idToken) {
+      return res.status(401).json({ error: 'Not logged in.' });
+    }
+
+    const decoded = await getAuth().verifyIdToken(idToken);
+    const adminEmail = (process.env.ADMIN_EMAIL || '').toLowerCase().trim();
+
+    if (!adminEmail) {
+      console.error('[requireAdmin] ADMIN_EMAIL env var is not set — denying all admin access.');
+      return res.status(503).json({ error: 'Admin access is not configured on the server yet.' });
+    }
+    if (!decoded.email || decoded.email.toLowerCase() !== adminEmail) {
+      return res.status(403).json({ error: 'You are not authorized to access admin features.' });
+    }
+
+    next();
+  } catch (err: any) {
+    console.error('[requireAdmin] Token verification failed:', err.message || err);
+    res.status(401).json({ error: 'Your session is invalid or expired. Please log in again.' });
+  }
+}
+
 // Health check route
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', app: 'Sikshya Sathi Backend', database: db ? 'connected' : 'not configured' });
 });
 
+
 /**
  * Save an admin-generated (or admin-created) mock test permanently to Firestore.
  */
-app.post('/api/mocktests', async (req, res) => {
+app.post('/api/mocktests', requireAdmin, async (req, res) => {
   try {
     if (!db) {
       return res.status(503).json({ error: 'Database not configured. Please set up FIREBASE_SERVICE_ACCOUNT first.' });
@@ -137,7 +180,7 @@ app.get('/api/leaderboard', async (req, res) => {
 /**
  * Save an admin-generated (or admin-edited) chapter permanently to Firestore.
  */
-app.post('/api/chapters', async (req, res) => {
+app.post('/api/chapters', requireAdmin, async (req, res) => {
   try {
     if (!db) {
       return res.status(503).json({ error: 'Database not configured yet.' });
@@ -402,7 +445,7 @@ ${compact ? `- lineByLineExplanation: at most 4 entries. keyWords: at most 6.
  * Admin: Convert ONE chapter's PDF (or raw text, e.g. from the whole-book splitter) into a
  * structured chapter for the app.
  */
-app.post('/api/admin/chapter-from-pdf', async (req, res) => {
+app.post('/api/admin/chapter-from-pdf', requireAdmin, async (req, res) => {
   try {
     const { pdfBase64, rawText, classLevel, subjectId, chapterNumber, titleEnglish, titleOdia } = req.body;
 
@@ -447,7 +490,7 @@ app.post('/api/admin/chapter-from-pdf', async (req, res) => {
  * title + its own slice of raw text, ready to be sent one-by-one to /api/admin/chapter-from-pdf
  * (using `rawText` instead of a PDF) for full generation + publishing.
  */
-app.post('/api/admin/split-book', async (req, res) => {
+app.post('/api/admin/split-book', requireAdmin, async (req, res) => {
   try {
     const { pdfBase64 } = req.body;
     if (!pdfBase64) {
@@ -833,7 +876,7 @@ Each flashcard MUST include:
  * AI Mock Test Importer — reads an uploaded PDF (question paper / mock test)
  * and converts it into structured MCQ questions for the app's Mock Test system.
  */
-app.post('/api/ai/import-mock-test', async (req, res) => {
+app.post('/api/ai/import-mock-test', requireAdmin, async (req, res) => {
   try {
     const { pdfBase64, classLevel, subjectId, titleEnglish, titleOdia, durationMinutes } = req.body;
 
@@ -934,7 +977,7 @@ Do not invent questions that are not present in the PDF.
  * Admin: Convert an uploaded PDF (question paper / practice set) into a
  * structured Mock Test (array of MCQs) using Gemini AI.
  */
-app.post('/api/admin/mocktest-from-pdf', async (req, res) => {
+app.post('/api/admin/mocktest-from-pdf', requireAdmin, async (req, res) => {
   try {
     const { pdfBase64, classLevel, subjectId, titleEnglish, titleOdia, durationMinutes } = req.body;
 
