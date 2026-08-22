@@ -1,5 +1,6 @@
 import React from 'react';
 import { AppProvider, useApp } from './context/AppContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
 import { HomeScreen } from './components/HomeScreen';
@@ -11,10 +12,28 @@ import { GrammarModule } from './components/GrammarModule';
 import { FlashcardModule } from './components/FlashcardModule';
 import { PDFLibrary } from './components/PDFLibrary';
 import { AdminPanel } from './components/AdminPanel';
+import { AdminLogin } from './components/AdminLogin';
 import { SearchModal } from './components/SearchModal';
 import { NotificationDrawer } from './components/NotificationDrawer';
 import { RazorpayModal } from './components/RazorpayModal';
 import { AIPlannerModal } from './components/AIPlannerModal';
+import { Loader2 } from 'lucide-react';
+
+/** Only reachable after a successful Firebase login (see server-side `requireAdmin` for the
+ *  actual security check — this just decides what to render). */
+const AdminGate: React.FC = () => {
+  const { user, isLoadingAuth } = useAuth();
+
+  if (isLoadingAuth) {
+    return (
+      <div className="flex justify-center py-20">
+        <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+      </div>
+    );
+  }
+
+  return user ? <AdminPanel /> : <AdminLogin />;
+};
 
 const MainContent: React.FC = () => {
   const { activeTab } = useApp();
@@ -32,7 +51,7 @@ const MainContent: React.FC = () => {
         {activeTab === 'grammar' && <GrammarModule />}
         {activeTab === 'flashcards' && <FlashcardModule />}
         {activeTab === 'pdf' && <PDFLibrary />}
-        {activeTab === 'admin' && <AdminPanel />}
+        {activeTab === 'admin' && <AdminGate />}
       </main>
 
       <SearchModal />
@@ -48,7 +67,9 @@ const MainContent: React.FC = () => {
 export default function App() {
   return (
     <AppProvider>
-      <MainContent />
+      <AuthProvider>
+        <MainContent />
+      </AuthProvider>
     </AppProvider>
   );
 }
