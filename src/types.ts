@@ -50,6 +50,14 @@ export interface Chapter {
   examTips: string[];
   pdfUrl?: string;
   isPremium?: boolean;
+  /** Chapter-level MCQ bank (distinct from the standalone Mock Test system). */
+  mcqs?: { id: string; difficulty: 'Easy' | 'Medium' | 'Hard'; questionEnglish: string; questionOdia: string; optionsEnglish: string[]; optionsOdia: string[]; correctOptionIndex: number; explanationEnglish: string }[];
+  /** A dedicated practice set — mix of comprehension/vocabulary/grammar/analytical items, separate from the graded MCQ bank. */
+  practiceQuestions?: { id: string; type: string; questionEnglish: string; answerEnglish: string }[];
+  /** Short bullet-point revision summary for quick pre-exam review. */
+  quickRevision?: string[];
+  /** Content workflow status — draft content is not shown to students; only 'published' chapters render on the student-facing Learn screen. */
+  contentStatus?: 'draft' | 'published';
 }
 
 export interface QuizQuestion {

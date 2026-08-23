@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { SUBJECTS, CHAPTERS_DATA } from '../data/odishaData';
 import { SubjectId, Chapter } from '../types';
+import { fetchLiveChapters } from '../services/aiService';
 import {
   BookOpen,
   Bookmark,
@@ -37,16 +38,29 @@ export const LearnScreen: React.FC = () => {
   } = useApp();
 
   const [activeNoteTab, setActiveNoteTab] = useState<
-    'summary' | 'line_by_line' | 'formulas_numericals' | 'diagrams' | 'keywords' | 'short_qs' | 'long_qs' | 'pyqs' | 'fill_blanks' | 'tips'
+    'summary' | 'line_by_line' | 'formulas_numericals' | 'diagrams' | 'keywords' | 'short_qs' | 'long_qs' | 'pyqs' | 'fill_blanks' | 'mcqs' | 'practice_revision' | 'tips'
   >('summary');
 
-  const filteredChapters = CHAPTERS_DATA.filter(
+  // Chapters generated from the official textbook PDF and published by an admin (live, database-backed)
+  const [liveChapters, setLiveChapters] = useState<Chapter[]>([]);
+  useEffect(() => {
+    fetchLiveChapters().then((chapters) => setLiveChapters(chapters as Chapter[]));
+  }, []);
+
+  const allChapters = [...CHAPTERS_DATA, ...liveChapters];
+
+  const filteredChapters = allChapters.filter(
     (ch) =>
       ch.classLevel === classLevel &&
-      (!selectedSubjectId || ch.subjectId === selectedSubjectId)
+      (!selectedSubjectId || ch.subjectId === selectedSubjectId) &&
+      // Draft content is only visible to admins reviewing it in the Admin Panel — students
+      // only ever see chapters that are explicitly published (or have no status set yet,
+      // which covers the original seed chapters written before this field existed).
+      ch.contentStatus !== 'draft'
   );
 
   const activeSubjectObj = SUBJECTS.find((s) => s.id === selectedSubjectId);
+
 
   return (
     <div className="space-y-6 pb-12">
@@ -159,7 +173,9 @@ export const LearnScreen: React.FC = () => {
               { id: 'short_qs', label: 'Short Qs & HOTS (2M)' },
               { id: 'long_qs', label: 'Long Qs & Cases (5M)' },
               { id: 'pyqs', label: 'Previous Year Board Qs' },
-              { id: 'fill_blanks', label: 'Exercises & MCQs' },
+              { id: 'fill_blanks', label: 'Exercises (Fill/T-F/Match)' },
+              { id: 'mcqs', label: 'MCQ Bank' },
+              { id: 'practice_revision', label: 'Practice & Quick Revision' },
               { id: 'tips', label: 'Exam Tips & Teacher Notes' },
             ].map((tab) => (
               <button
@@ -605,6 +621,103 @@ export const LearnScreen: React.FC = () => {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* MCQ Bank */}
+            {activeNoteTab === 'mcqs' && (
+              <div className="space-y-3">
+                <h3 className="font-bold text-xs text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+                  MCQ Bank ({selectedChapter.mcqs?.length || 0} questions)
+                </h3>
+                {(!selectedChapter.mcqs || selectedChapter.mcqs.length === 0) && (
+                  <div className="text-center py-8 text-xs text-slate-500 dark:text-slate-400">
+                    MCQs for this chapter are being prepared.
+                  </div>
+                )}
+                {selectedChapter.mcqs?.map((mcq, idx) => (
+                  <div
+                    key={mcq.id}
+                    className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 space-y-2"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                        {idx + 1}. {language === 'Odia' ? mcq.questionOdia : mcq.questionEnglish}
+                      </p>
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded shrink-0 ${
+                          mcq.difficulty === 'Easy'
+                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300'
+                            : mcq.difficulty === 'Medium'
+                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'
+                            : 'bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300'
+                        }`}
+                      >
+                        {mcq.difficulty}
+                      </span>
+                    </div>
+                    <div className="space-y-1">
+                      {(language === 'Odia' ? mcq.optionsOdia : mcq.optionsEnglish).map((opt, oi) => (
+                        <div
+                          key={oi}
+                          className={`text-[11px] px-2.5 py-1.5 rounded-lg ${
+                            oi === mcq.correctOptionIndex
+                              ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 font-semibold'
+                              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                          }`}
+                        >
+                          {String.fromCharCode(65 + oi)}. {opt} {oi === mcq.correctOptionIndex && '✓'}
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 italic">
+                      {mcq.explanationEnglish}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Practice Set & Quick Revision */}
+            {activeNoteTab === 'practice_revision' && (
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <h3 className="font-bold text-xs text-purple-600 dark:text-purple-400 uppercase tracking-wider">
+                    Practice Set ({selectedChapter.practiceQuestions?.length || 0} questions)
+                  </h3>
+                  {(!selectedChapter.practiceQuestions || selectedChapter.practiceQuestions.length === 0) && (
+                    <div className="text-center py-6 text-xs text-slate-500 dark:text-slate-400">
+                      Practice questions for this chapter are being prepared.
+                    </div>
+                  )}
+                  {selectedChapter.practiceQuestions?.map((pq, idx) => (
+                    <div
+                      key={pq.id}
+                      className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/50 space-y-1"
+                    >
+                      <span className="text-[9px] font-bold uppercase text-purple-500">{pq.type}</span>
+                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                        {idx + 1}. {pq.questionEnglish}
+                      </p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">{pq.answerEnglish}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {selectedChapter.quickRevision && selectedChapter.quickRevision.length > 0 && (
+                  <div className="space-y-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+                    <h3 className="font-bold text-xs text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+                      ⚡ Quick Revision
+                    </h3>
+                    <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 space-y-1.5">
+                      {selectedChapter.quickRevision.map((point, i) => (
+                        <p key={i} className="text-xs text-emerald-900 dark:text-emerald-200">
+                          • {point}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
